@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { DraftMemberModal } from '@/components/missions/DraftMemberModal';
 import { PitchModal } from '@/components/missions/PitchModal'; // <-- Import PitchModal
+import { toast } from 'react-hot-toast'
 
 const RoleCard = ({ role, onDraftClick }: { role: MissionRole, onDraftClick: (roleId: string) => void }) => (
     <Card className="bg-secondary">

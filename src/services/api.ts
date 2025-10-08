@@ -70,4 +70,9 @@ export const createMission = async (payload: MissionCreatePayload): Promise<Miss
   return response.data;
 };
 
+export const getPitchesForMission = async (missionId: string): Promise<MissionPitch[]> => {
+  const response = await apiClient.get(`/missions/${missionId}/pitches/`);
+  return response.data;
+};
+
 export default apiClient;
