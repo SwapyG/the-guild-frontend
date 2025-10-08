@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css"; 
 import { cn } from "@/lib/utils";
-import { Toaster } from 'react-hot-toast'; // <-- 1. IMPORT
+import { Toaster } from 'react-hot-toast';
 
 const fontSans = Inter({ 
   subsets: ["latin"],
@@ -22,7 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // THE FIX IS HERE: adding className="dark" to the html tag
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head />
       <body
         className={cn(
@@ -31,7 +32,7 @@ export default function RootLayout({
         )}
       >
         {children}
-        <Toaster position="bottom-right" /> {/* <-- 2. ADD THE COMPONENT */}
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

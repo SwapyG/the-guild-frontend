@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "echo '>>> Building with NEXT_PUBLIC_API_URL:' && echo $NEXT_PUBLIC_API_URL && next build",
-  "start": "next start",
-  "lint": "next lint"
-},
+    "dev": "next dev",
+    "build": "echo '>>> Building with NEXT_PUBLIC_API_URL:' && echo $NEXT_PUBLIC_API_URL && next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -19,6 +19,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "framer-motion": "^12.23.22",
     "lucide-react": "^0.545.0",
     "next": "15.5.4",
     "react": "19.1.0",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "24.7.0",
+    "@types/react": "19.2.2",
     "autoprefixer": "^10.4.21",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
