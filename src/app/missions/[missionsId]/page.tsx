@@ -1,4 +1,4 @@
-// src/app/missions/[missionId]/page.tsx (Updated for Pitch Modal)
+// src/app/missions/[missionId]/page.tsx (FINAL, CORRECTED STATE MANAGEMENT)
 
 "use client";
 
@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 import { DraftMemberModal } from '@/components/missions/DraftMemberModal';
-import { PitchModal } from '@/components/missions/PitchModal'; // <-- Import PitchModal
-import { toast } from 'react-hot-toast'
+import { PitchModal } from '@/components/missions/PitchModal';
+import { PitchList } from '@/components/missions/PitchList';
 
 const RoleCard = ({ role, onDraftClick }: { role: MissionRole, onDraftClick: (roleId: string) => void }) => (
     <Card className="bg-secondary">
@@ -54,7 +55,10 @@ export default function MissionDetailPage() {
 
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-  const [isPitchModalOpen, setIsPitchModalOpen] = useState(false); // <-- State for Pitch Modal
+  const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
+
+  // --- THIS IS THE FIX: A state variable to trigger re-renders ---
+  const [pitchListKey, setPitchListKey] = useState(Date.now());
 
   const fetchMission = useCallback(async () => {
     if (!missionId) return;
@@ -84,9 +88,11 @@ export default function MissionDetailPage() {
     fetchMission();
   };
 
+  // --- THIS IS THE FIX: Update the key on success ---
   const handlePitchSuccess = () => {
-    // For now, just log to the console. In a real app, you might show a "Success!" message.
-    console.log("Pitch submitted successfully!");
+    toast.success("Pitch submitted! The mission lead has been notified.");
+    // Update the key to a new value, forcing the PitchList component to re-mount and re-fetch.
+    setPitchListKey(Date.now());
   };
 
   if (loading) return <div className="p-8 text-center">Loading Mission...</div>;
@@ -97,12 +103,12 @@ export default function MissionDetailPage() {
     <>
       <main className="p-8">
         <div className="max-w-4xl mx-auto">
+          {/* ... Header and Roles sections are the same ... */}
           <div className="mb-4">
             <Link href="/dashboard" className="text-sm text-primary hover:underline">
               &larr; Back to Dashboard
             </Link>
           </div>
-          
           <header className="flex justify-between items-start mb-6">
             <div>
               <h1 className="text-4xl font-bold">{mission.title}</h1>
@@ -117,13 +123,10 @@ export default function MissionDetailPage() {
                 </div>
               </div>
             </div>
-            {/* Update the button to open the pitch modal */}
             <Button onClick={() => setIsPitchModalOpen(true)}>Pitch for this Mission</Button>
           </header>
-
           <p className="mb-8 text-lg text-muted-foreground">{mission.description}</p>
           <Separator className="my-8" />
-
           <section>
             <h2 className="text-3xl font-semibold mb-6">Mission Roles</h2>
             <div className="space-y-4">
@@ -132,16 +135,23 @@ export default function MissionDetailPage() {
               ))}
             </div>
           </section>
+
+          <Separator className="my-8" />
+          <section>
+            <h2 className="text-3xl font-semibold mb-6">Aspiration Ledger (Pitches)</h2>
+            {/* --- THIS IS THE FIX: Pass the key to the component --- */}
+            <PitchList key={pitchListKey} missionId={mission.id} />
+          </section>
         </div>
       </main>
 
-      <DraftMemberModal 
+      {/* ... Modals are the same ... */}
+       <DraftMemberModal 
         isOpen={isDraftModalOpen}
         onClose={() => setIsDraftModalOpen(false)}
         roleId={selectedRoleId}
         onDraftSuccess={handleDraftSuccess}
       />
-      {/* Render the new PitchModal */}
       <PitchModal
         isOpen={isPitchModalOpen}
         onClose={() => setIsPitchModalOpen(false)}
