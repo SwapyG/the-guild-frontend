@@ -1,69 +1,67 @@
-// src/components/missions/PitchModal.tsx (Fully Corrected)
+// src/components/missions/PitchModal.tsx
 
 "use client";
 
 import { useState } from 'react';
+import axios from 'axios'; // <-- Make sure this is imported
+import { toast } from 'react-hot-toast'; // <-- Import toast
 import { pitchForMission } from '@/services/api';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import axios from 'axios';
 
+// ... (interface and const PITCHING_USER_ID remain the same)
 interface PitchModalProps {
   isOpen: boolean;
   onClose: () => void;
   missionId: string | null;
   onPitchSuccess: () => void;
 }
-
-// The user ID is now a constant at the top level of the module.
 const PITCHING_USER_ID = "49c731ca-417c-420e-b3a0-cb74d698fe52";
+
 
 export const PitchModal = ({ isOpen, onClose, missionId, onPitchSuccess }: PitchModalProps) => {
   const [pitchText, setPitchText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!missionId || !pitchText.trim()) return;
 
     setIsSubmitting(true);
+    const toastId = toast.loading('Submitting your pitch...'); // Show a loading toast
+
     try {
       await pitchForMission(missionId, PITCHING_USER_ID, pitchText);
+      toast.success('Pitch submitted successfully!', { id: toastId }); // Update to success
       onPitchSuccess();
       onClose();
       setPitchText('');
-    } catch (error) { // 'error' is of type 'unknown'
+    } catch (error) {
       console.error('Failed to submit pitch:', error);
       
-      // --- THE TYPE-SAFE FIX IS HERE ---
-      // Use the axios type guard to check the error shape
+      let errorMessage = 'An unexpected error occurred.';
       if (axios.isAxiosError(error) && error.response) {
-        // Now TypeScript knows 'error.response' exists
         if (error.response.status === 409) {
-          alert("You have already pitched for this mission.");
+          errorMessage = "You have already pitched for this mission.";
         } else {
-          // For any other API error, show a generic message
-          alert(`An API error occurred: ${error.response.statusText}`);
+          errorMessage = `An API error occurred: ${error.response.data.detail || error.response.statusText}`;
         }
-      } else {
-        // This handles network errors or other non-API issues
-        alert('An unexpected error occurred. Please try again.');
       }
-      // ---------------------------------
-
+      toast.error(errorMessage, { id: toastId }); // Update to error
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
+    // ... (The JSX for the modal remains exactly the same)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Pitch for this Mission</DialogTitle>
           <DialogDescription>
-            Explain why you &apos re a great fit for this mission. Your pitch will be visible to the mission lead.
+            Explain why you are a great fit for this mission. Your pitch will be visible to the mission lead.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

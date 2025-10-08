@@ -52,10 +52,15 @@ export const CreateMissionModal = ({ isOpen, onClose, onMissionCreated }: Create
   }, [isOpen]);
 
   // --- Handlers for dynamically managing roles ---
-  const handleRoleChange = (index: number, field: keyof FormRole, value: string) => {
-    const updatedRoles = [...roles];
-    (updatedRoles[index] as any)[field] = value;
-    setRoles(updatedRoles);
+const handleRoleChange = (index: number, field: keyof FormRole, value: string | SkillProficiency) => {
+    setRoles(currentRoles => 
+      currentRoles.map((role, i) => {
+        if (i === index) {
+          return { ...role, [field]: value };
+        }
+        return role;
+      })
+    );
   };
 
   const addRole = () => {

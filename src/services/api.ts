@@ -3,8 +3,11 @@
 import axios from 'axios';
 import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill } from '@/types';
 
+// --- UPDATED API CLIENT CONFIGURATION ---
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
   },

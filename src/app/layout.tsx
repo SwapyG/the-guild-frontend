@@ -2,12 +2,9 @@
 
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-
-// 1. IMPORT THE CSS FILE
 import "./globals.css"; 
-
-// 2. IMPORT THE 'cn' UTILITY FUNCTION
 import { cn } from "@/lib/utils";
+import { Toaster } from 'react-hot-toast'; // <-- 1. IMPORT
 
 const fontSans = Inter({ 
   subsets: ["latin"],
@@ -27,7 +24,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      {/* 3. APPLY THE FONT AND BASE CLASSES TO THE BODY */}
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
@@ -35,6 +31,7 @@ export default function RootLayout({
         )}
       >
         {children}
+        <Toaster position="bottom-right" /> {/* <-- 2. ADD THE COMPONENT */}
       </body>
     </html>
   );
