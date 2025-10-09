@@ -6,20 +6,13 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LayoutDashboard, LogOut, Code } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle"; // <-- 1. IMPORT
 
 export const Header = () => {
   const { isAuthenticated, user, logout, loading } = useAuth();
 
-  // Don't render anything until we've checked for a token
   if (loading) {
     return <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"><div className="container flex h-14 items-center"></div></header>;
   }
@@ -34,21 +27,21 @@ export const Header = () => {
           </Link>
         </div>
         
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-2"> {/* Adjusted spacing */}
+          <ThemeToggle /> {/* <-- 2. ADD THE COMPONENT */}
           {isAuthenticated ? (
             <>
-              <Button asChild>
+              <Button variant="ghost" asChild>
                 <Link href="/dashboard">
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> Go to Dashboard
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
                 </Link>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                       {/* In a real app, user?.photo_url would be here */}
                       <AvatarImage src={user?.photo_url || ""} alt={user?.name} />
-                      <AvatarFallback>{user?.name ? user.name.charAt(0) : '?'}</AvatarFallback>
+                      <AvatarFallback>{user?.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>

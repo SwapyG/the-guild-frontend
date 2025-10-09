@@ -1,17 +1,13 @@
 // src/app/layout.tsx
 
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css"; 
 import { cn } from "@/lib/utils";
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from "@/context/AuthContext";
-import { Header } from "@/components/layout/Header"; // <-- IMPORT
-
-const fontSans = Inter({ 
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+import { Header } from "@/components/layout/Header";
+import { ThemeProvider } from "@/components/providers/ThemeProvider"; // <-- 1. IMPORT
 
 export const metadata = {
   title: "The Guild",
@@ -24,21 +20,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
       <head />
-      <body
-        className={cn(
-          "min-h-screen bg-background font-sans antialiased",
-          fontSans.variable
-        )}
-      >
-        <AuthProvider>
-          <div className="relative flex min-h-screen flex-col">
-            <Header /> 
-            <div className="flex-1">{children}</div>
-          </div>
-        </AuthProvider>
-        <Toaster position="bottom-right" />
+      <body>
+        {/* 2. WRAP everything in the ThemeProvider */}
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+          <AuthProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <div className="flex-1">{children}</div>
+            </div>
+          </AuthProvider>
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );
