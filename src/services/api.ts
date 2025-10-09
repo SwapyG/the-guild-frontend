@@ -1,9 +1,8 @@
-// src/services/api.ts (FINAL AND CORRECTED)
+// src/services/api.ts
 
 import axios from 'axios';
 import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill } from '@/types';
 
-// --- UPDATED API CLIENT CONFIGURATION ---
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
@@ -35,29 +34,21 @@ export const draftUserToRole = async (roleId: string, userId: string): Promise<M
   return response.data;
 };
 
-export const pitchForMission = async (
-  missionId: string,
-  userId: string,
-  pitchText: string
-): Promise<MissionPitch> => {
+export const pitchForMission = async (missionId: string, pitchText: string): Promise<MissionPitch> => {
   const response = await apiClient.post(`/missions/${missionId}/pitch`, {
-    user_id: userId,
     pitch_text: pitchText,
   });
   return response.data;
 };
 
-// --- THIS IS THE CRITICAL FUNCTION THAT WAS MISSING ---
 export const getSkills = async (): Promise<Skill[]> => {
   const response = await apiClient.get('/skills/');
   return response.data;
 };
-// -----------------------------------------------------
 
 export interface MissionCreatePayload {
   title: string;
   description?: string;
-  lead_user_id: string;
   roles: {
     role_description: string;
     skill_id_required: string;
@@ -74,5 +65,40 @@ export const getPitchesForMission = async (missionId: string): Promise<MissionPi
   const response = await apiClient.get(`/missions/${missionId}/pitches/`);
   return response.data;
 };
+
+
+// --- AUTHENTICATION FUNCTIONS ---
+
+export const loginUser = async (email: string, password: string): Promise<string> => {
+  const params = new URLSearchParams();
+  params.append('username', email);
+  params.append('password', password);
+
+  const response = await apiClient.post('/auth/login', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  
+  return response.data.access_token;
+};
+
+export interface RegisterUserPayload {
+  email: string;
+  password: string;
+  name: string;
+  title: string;
+  photo_url?: string | null;
+}
+
+export const registerUser = async (payload: RegisterUserPayload): Promise<User> => {
+  const response = await apiClient.post('/auth/register', payload);
+  return response.data;
+};
+
+export const getMe = async (): Promise<User> => {
+    const response = await apiClient.get('/users/me');
+    return response.data;
+};
+// ------------------------------------
+
 
 export default apiClient;

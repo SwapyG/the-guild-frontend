@@ -5,13 +5,15 @@ import { Inter } from "next/font/google";
 import "./globals.css"; 
 import { cn } from "@/lib/utils";
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from "@/context/AuthContext";
+import { Header } from "@/components/layout/Header"; // <-- IMPORT
 
 const fontSans = Inter({ 
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "The Guild",
   description: "An Operating System for a Post-Job Economy.",
 };
@@ -22,7 +24,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // THE FIX IS HERE: adding className="dark" to the html tag
     <html lang="en" className="dark" suppressHydrationWarning>
       <head />
       <body
@@ -31,7 +32,12 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        {children}
+        <AuthProvider>
+          <div className="relative flex min-h-screen flex-col">
+            <Header /> 
+            <div className="flex-1">{children}</div>
+          </div>
+        </AuthProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>
