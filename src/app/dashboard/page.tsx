@@ -1,36 +1,46 @@
-// src/app/dashboard/page.tsx (FINAL AND CORRECTED)
-// Forcing a fresh Vercel build to pick up new environment variables.
+// src/app/dashboard/page.tsx (Enterprise UI/UX Polish)
+
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
 import { Mission, MissionStatus } from '@/types';
 import { getMissions } from '@/services/api';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CreateMissionModal } from '@/components/missions/CreateMissionModal';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { ClipboardList, Activity, CheckCircle2 } from 'lucide-react'; // <-- Professional Icons
 
-const getStatusTitle = (status: MissionStatus) => {
-  const titles: Record<MissionStatus, string> = {
-    Proposed: '🚀 Proposed',
-    Active: '🔥 Active',
-    Completed: '✅ Completed',
-  };
-  return titles[status];
+// A mapping from status to the new icon and title
+const statusConfig: Record<MissionStatus, { title: string; icon: React.ReactNode }> = {
+  Proposed: {
+    title: 'Proposed',
+    icon: <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" />,
+  },
+  Active: {
+    title: 'Active',
+    icon: <Activity className="h-5 w-5 mr-2 text-muted-foreground" />,
+  },
+  Completed: {
+    title: 'Completed',
+    icon: <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />,
+  },
 };
 
 const MissionCard = ({ mission }: { mission: Mission }) => (
   <Link href={`/missions/${mission.id}`} className="block">
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-secondary h-full">
+    {/* Refined card with better hover effects and structure */}
+    <Card className="h-full bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1">
       <CardHeader>
-        <CardTitle className="text-lg">{mission.title}</CardTitle>
+        <CardTitle className="text-lg tracking-tight">{mission.title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">Lead: {mission.lead.name}</p>
-        <p className="text-sm text-muted-foreground">
-          {mission.roles.length} role(s)
-        </p>
+      <CardContent className="text-sm text-muted-foreground">
+        <p>Lead: {mission.lead.name}</p>
       </CardContent>
+      <CardFooter className="text-xs text-muted-foreground">
+        <p>{mission.roles.length} role(s) defined</p>
+      </CardFooter>
     </Card>
   </Link>
 );
@@ -48,7 +58,7 @@ export default function DashboardPage() {
       setMissions(data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch missions. Is the backend server running?');
+      setError('Failed to fetch missions. Please check if the backend server is running and you are logged in.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -63,7 +73,6 @@ export default function DashboardPage() {
     fetchMissions();
   };
 
-  // --- LOGIC MOVED BACK INSIDE ---
   const missionsByStatus = missions.reduce((acc, mission) => {
     if (!acc[mission.status]) {
       acc[mission.status] = [];
@@ -72,42 +81,52 @@ export default function DashboardPage() {
     return acc;
   }, {} as Record<MissionStatus, Mission[]>);
 
-  if (loading) return <p className="text-center p-8">Loading missions...</p>;
-  if (error) return <p className="text-center text-red-500 p-8">{error}</p>;
-
   return (
-    <>
-      <main className="p-8 bg-background min-h-screen text-foreground">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">The Guild Dashboard</h1>
-          <Button onClick={() => setIsCreateModalOpen(true)}>Create New Mission</Button>
-        </div>
+    <ProtectedRoute>
+      <>
+        <main className="p-4 md:p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold tracking-tight">The Guild Dashboard</h1>
+            <Button onClick={() => setIsCreateModalOpen(true)}>Create New Mission</Button>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {(['Proposed', 'Active', 'Completed'] as MissionStatus[]).map((status) => (
-            <div key={status} className="bg-muted rounded-lg p-4">
-              <h2 className="text-2xl font-semibold mb-6 text-center">
-                {getStatusTitle(status)}
-              </h2>
-              <div className="space-y-4">
-                {missionsByStatus[status]?.length > 0 ? (
-                  missionsByStatus[status].map((mission) => (
-                    <MissionCard key={mission.id} mission={mission} />
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-center">No missions in this stage.</p>
-                )}
-              </div>
+          {loading ? (
+            <p className="text-center text-muted-foreground">Loading missions...</p>
+          ) : error ? (
+            <p className="text-center text-red-500">{error}</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {(['Proposed', 'Active', 'Completed'] as MissionStatus[]).map((status) => (
+                <div key={status} className="bg-secondary/50 rounded-lg p-4">
+                  <div className="flex items-center mb-6 px-2">
+                    {statusConfig[status].icon}
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                      {statusConfig[status].title}
+                    </h2>
+                  </div>
+                  <div className="space-y-4">
+                    {missionsByStatus[status]?.length > 0 ? (
+                      missionsByStatus[status].map((mission) => (
+                        <MissionCard key={mission.id} mission={mission} />
+                      ))
+                    ) : (
+                      <div className="text-center text-sm text-muted-foreground py-8">
+                        No missions in this stage.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </main>
+          )}
+        </main>
 
-      <CreateMissionModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onMissionCreated={handleMissionCreated}
-      />
-    </>
+        <CreateMissionModal 
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onMissionCreated={handleMissionCreated}
+        />
+      </>
+    </ProtectedRoute>
   );
 }
