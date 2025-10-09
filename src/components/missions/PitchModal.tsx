@@ -1,25 +1,24 @@
-// src/components/missions/PitchModal.tsx
+// src/components/missions/PitchModal.tsx (Corrected for Auth)
 
 "use client";
 
 import { useState } from 'react';
-import axios from 'axios'; // <-- Make sure this is imported
-import { toast } from 'react-hot-toast'; // <-- Import toast
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import { pitchForMission } from '@/services/api';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-// ... (interface and const PITCHING_USER_ID remain the same)
 interface PitchModalProps {
   isOpen: boolean;
   onClose: () => void;
   missionId: string | null;
   onPitchSuccess: () => void;
 }
-const PITCHING_USER_ID = "49c731ca-417c-420e-b3a0-cb74d698fe52";
 
+// The hardcoded user ID is now completely removed.
 
 export const PitchModal = ({ isOpen, onClose, missionId, onPitchSuccess }: PitchModalProps) => {
   const [pitchText, setPitchText] = useState('');
@@ -29,11 +28,14 @@ export const PitchModal = ({ isOpen, onClose, missionId, onPitchSuccess }: Pitch
     if (!missionId || !pitchText.trim()) return;
 
     setIsSubmitting(true);
-    const toastId = toast.loading('Submitting your pitch...'); // Show a loading toast
+    const toastId = toast.loading('Submitting your pitch...');
 
     try {
-      await pitchForMission(missionId, PITCHING_USER_ID, pitchText);
-      toast.success('Pitch submitted successfully!', { id: toastId }); // Update to success
+      // --- THE FIX IS HERE: No longer passing the user ID ---
+      await pitchForMission(missionId, pitchText);
+      // ----------------------------------------------------
+      
+      toast.success('Pitch submitted successfully!', { id: toastId });
       onPitchSuccess();
       onClose();
       setPitchText('');
@@ -48,20 +50,19 @@ export const PitchModal = ({ isOpen, onClose, missionId, onPitchSuccess }: Pitch
           errorMessage = `An API error occurred: ${error.response.data.detail || error.response.statusText}`;
         }
       }
-      toast.error(errorMessage, { id: toastId }); // Update to error
+      toast.error(errorMessage, { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    // ... (The JSX for the modal remains exactly the same)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Pitch for this Mission</DialogTitle>
           <DialogDescription>
-            Explain why you are a great fit for this mission. Your pitch will be visible to the mission lead.
+            Explain why you're a great fit for this mission. Your pitch will be visible to the mission lead.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
