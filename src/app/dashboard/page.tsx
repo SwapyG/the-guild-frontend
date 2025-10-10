@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx (Interactive Drag-and-Drop Version)
+// src/app/dashboard/page.tsx (Final, Robust Drag-and-Drop with Debugging)
 
 "use client";
 
@@ -10,11 +10,21 @@ import { CreateMissionModal } from '@/components/missions/CreateMissionModal';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { ClipboardList, Activity, CheckCircle2 } from 'lucide-react';
-import { DndContext, DragEndEvent, closestCorners } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { MissionColumn } from '@/components/missions/MissionColumn';
 import { SortableMissionCard } from '@/components/missions/SortableMissionCard';
 import { toast } from 'react-hot-toast';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Non-sortable card for the drag overlay
+const MissionCardOverlay = ({ mission }: { mission: Mission }) => (
+    <Card className="bg-card border-primary/50 shadow-lg">
+        <CardHeader><CardTitle className="text-lg tracking-tight">{mission.title}</CardTitle></CardHeader>
+        <CardContent className="text-sm text-muted-foreground"><p>Lead: {mission.lead.name}</p></CardContent>
+        <CardFooter className="text-xs text-muted-foreground"><p>{mission.roles.length} role(s) defined</p></CardFooter>
+    </Card>
+);
 
 const statusConfig: Record<MissionStatus, { title: string; icon: React.ReactNode }> = {
   Proposed: { title: 'Proposed', icon: <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" /> },
@@ -28,6 +38,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [activeMission, setActiveMission] = useState<Mission | null>(null);
 
   const fetchMissions = useCallback(async () => {
     try {
@@ -43,37 +54,62 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchMissions();
-  }, [fetchMissions]);
+    if(user) { // Only fetch missions if the user is logged in
+        fetchMissions();
+    }
+  }, [fetchMissions, user]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const mission = missions.find(m => m.id === event.active.id);
+    if (mission) {
+      setActiveMission(mission);
+    }
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveMission(null);
     const { active, over } = event;
 
-    if (!over || active.id === over.id) {
+    // --- DEBUGGING LOGS ---
+    console.log("--- Drag End Event ---");
+    console.log("Active (Card) ID:", active.id);
+    console.log("Over (Column) ID:", over?.id);
+    // ----------------------
+
+    if (!over || !over.id || active.id === over.id) {
+      return;
+    }
+    
+    const missionId = active.id as string;
+    const newStatus = over.id as MissionStatus;
+    const originalStatus = missions.find(m => m.id === missionId)?.status;
+
+    // Do nothing if dropped in the same column
+    if (originalStatus === newStatus) {
       return;
     }
 
-    const missionId = active.id as string;
-    const newStatus = over.id as MissionStatus;
+    // You can only drag a mission if you are the lead
+    const missionToMove = missions.find(m => m.id === missionId);
+    if(user?.id !== missionToMove?.lead_user_id) {
+        toast.error("Only the mission lead can change the status.");
+        return;
+    }
 
-    // Optimistic UI Update: Move the card immediately
-    setMissions(currentMissions => {
-      const missionToUpdate = currentMissions.find(m => m.id === missionId);
-      if (missionToUpdate) {
-        missionToUpdate.status = newStatus;
-      }
-      return [...currentMissions];
-    });
+    const originalMissions = JSON.parse(JSON.stringify(missions)); // Deep copy for reliable revert
 
-    // Call the API to persist the change
+    // Optimistic UI Update
+    setMissions(currentMissions => 
+        currentMissions.map(m => m.id === missionId ? { ...m, status: newStatus } : m)
+    );
+
     try {
       await updateMissionStatus(missionId, newStatus);
       toast.success('Mission status updated!');
     } catch (error) {
       toast.error('Failed to update mission status. Reverting.');
+      setMissions(originalMissions); // Revert on failure
       console.error(error);
-      // Revert the optimistic update on failure
-      fetchMissions(); 
     }
   };
 
@@ -94,20 +130,20 @@ export default function DashboardPage() {
             {canCreateMissions && <Button onClick={() => setIsCreateModalOpen(true)}>Create New Mission</Button>}
           </div>
 
-          {loading ? (
-            <p className="text-center text-muted-foreground">Loading missions...</p>
-          ) : error ? (
-            <p className="text-center text-red-500">{error}</p>
-          ) : (
-            <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
+          {loading ? ( <p className="text-center text-muted-foreground">Loading missions...</p> ) 
+           : error ? ( <p className="text-center text-red-500">{error}</p> ) 
+           : (
+            <DndContext 
+              onDragStart={handleDragStart} 
+              onDragEnd={handleDragEnd} 
+              collisionDetection={closestCorners}
+            >
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {(['Proposed', 'Active', 'Completed'] as MissionStatus[]).map((status) => (
                   <MissionColumn key={status} status={status}>
                     <div className="flex items-center mb-6 px-2">
                       {statusConfig[status].icon}
-                      <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                        {statusConfig[status].title}
-                      </h2>
+                      <h2 className="text-lg font-semibold tracking-tight text-foreground">{statusConfig[status].title}</h2>
                     </div>
                     <SortableContext items={missionsByStatus[status]?.map(m => m.id) || []} strategy={verticalListSortingStrategy}>
                       <div className="space-y-4">
@@ -125,6 +161,10 @@ export default function DashboardPage() {
                   </MissionColumn>
                 ))}
               </div>
+              
+              <DragOverlay>
+                {activeMission ? <MissionCardOverlay mission={activeMission} /> : null}
+              </DragOverlay>
             </DndContext>
           )}
         </main>
