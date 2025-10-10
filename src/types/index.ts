@@ -1,17 +1,21 @@
-// src/types/index.ts
+// src/types/index.ts (Corrected for RBAC)
 
-// These types mirror the Pydantic schemas in our FastAPI backend.
+// --- ADD THE UserRole TYPE ---
+export type UserRole = 'Member' | 'Manager' | 'Admin';
+// -----------------------------
 
 export type SkillProficiency = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 export type MissionStatus = 'Proposed' | 'Active' | 'Completed';
-export type PitchStatus = 'Submitted' | 'Accepted' | 'Rejected';
 
 export interface User {
-  id: string; // UUIDs are strings in TypeScript/JSON
+  id: string;
   name: string;
   email: string;
   title: string;
   photo_url?: string;
+  // --- ADD THE role PROPERTY ---
+  role: UserRole;
+  // -----------------------------
 }
 
 export interface Skill {
@@ -25,8 +29,9 @@ export interface MissionRole {
   role_description: string;
   skill_id_required: string;
   proficiency_required: SkillProficiency;
-  assignee?: User; // The assignee is a nested User object
-  required_skill: Skill; // Add this for displaying the skill name
+  assignee?: User;
+  required_skill: Skill;
+  mission: Mission; // We added this in a previous step, let's ensure it's here
 }
 
 export interface Mission {
@@ -35,11 +40,12 @@ export interface Mission {
   description?: string;
   lead_user_id: string;
   status: MissionStatus;
-  created_at: string; // ISO date string
-  lead: User; // The lead is a nested User object
-  roles: MissionRole[]; // Has a list of MissionRole objects
+  created_at: string;
+  lead: User;
+  roles: MissionRole[];
 }
 
+export type PitchStatus = 'Submitted' | 'Accepted' | 'Rejected';
 
 export interface MissionPitch {
   id: string;
@@ -47,5 +53,5 @@ export interface MissionPitch {
   user_id: string;
   pitch_text: string;
   status: PitchStatus;
-  user: User; // The backend conveniently includes the user who pitched
+  user: User;
 }
