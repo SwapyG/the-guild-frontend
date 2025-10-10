@@ -1,10 +1,10 @@
-// src/app/auth/login/page.tsx
+// src/app/auth/login/page.tsx (Corrected)
 
 "use client";
 
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { loginUser } from "@/services/api";
+import { loginUser } from "@/services/api"; // This is for the API call
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Get the 'login' function from our context. It is NOT named 'loginUser'.
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,9 +30,12 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
+      // Call the API function, which IS named 'loginUser'
       const token = await loginUser(email, password);
+
+      // Call the context function, which IS named 'login'
       login(token); 
-      // The redirect is handled inside the login function in AuthContext
+      
     } catch (error) {
       console.error("Login failed:", error);
       if (axios.isAxiosError(error) && error.response) {
@@ -38,7 +43,6 @@ export default function LoginPage() {
       } else {
         toast.error("An unexpected error occurred. Please try again.");
       }
-    } finally {
       setIsLoading(false);
     }
   };

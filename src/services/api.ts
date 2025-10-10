@@ -1,4 +1,4 @@
-// src/services/api.ts (Corrected)
+// src/services/api.ts (Final, Corrected Version)
 
 import axios from 'axios';
 import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill } from '@/types';
@@ -46,20 +46,15 @@ export const getSkills = async (): Promise<Skill[]> => {
   return response.data;
 };
 
-
-// --- THIS IS THE CORRECTED INTERFACE ---
 export interface MissionCreatePayload {
   title: string;
   description?: string;
-  // The lead_user_id field has been removed
   roles: {
     role_description: string;
     skill_id_required: string;
     proficiency_required: SkillProficiency;
   }[];
 }
-// ------------------------------------
-
 
 export const createMission = async (payload: MissionCreatePayload): Promise<Mission> => {
   const response = await apiClient.post('/missions/', payload);
@@ -71,7 +66,13 @@ export const getPitchesForMission = async (missionId: string): Promise<MissionPi
   return response.data;
 };
 
+export const updateMissionStatus = async (missionId: string, status: MissionStatus): Promise<Mission> => {
+  const response = await apiClient.patch(`/missions/${missionId}/status`, { status });
+  return response.data;
+};
+
 // --- AUTHENTICATION FUNCTIONS ---
+
 export const loginUser = async (email: string, password: string): Promise<string> => {
   const params = new URLSearchParams();
   params.append('username', email);
@@ -101,5 +102,6 @@ export const getMe = async (): Promise<User> => {
     const response = await apiClient.get('/users/me');
     return response.data;
 };
+// ------------------------------------
 
 export default apiClient;

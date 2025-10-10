@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx (Enterprise UI/UX Polish)
+// src/app/dashboard/page.tsx (With Role-Based UI)
 
 "use client";
 
@@ -10,27 +10,17 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CreateMissionModal } from '@/components/missions/CreateMissionModal';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { ClipboardList, Activity, CheckCircle2 } from 'lucide-react'; // <-- Professional Icons
+import { useAuth } from '@/context/AuthContext'; // <-- 1. Import useAuth
+import { ClipboardList, Activity, CheckCircle2 } from 'lucide-react';
 
-// A mapping from status to the new icon and title
 const statusConfig: Record<MissionStatus, { title: string; icon: React.ReactNode }> = {
-  Proposed: {
-    title: 'Proposed',
-    icon: <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" />,
-  },
-  Active: {
-    title: 'Active',
-    icon: <Activity className="h-5 w-5 mr-2 text-muted-foreground" />,
-  },
-  Completed: {
-    title: 'Completed',
-    icon: <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />,
-  },
+  Proposed: { title: 'Proposed', icon: <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" /> },
+  Active: { title: 'Active', icon: <Activity className="h-5 w-5 mr-2 text-muted-foreground" /> },
+  Completed: { title: 'Completed', icon: <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" /> },
 };
 
 const MissionCard = ({ mission }: { mission: Mission }) => (
   <Link href={`/missions/${mission.id}`} className="block">
-    {/* Refined card with better hover effects and structure */}
     <Card className="h-full bg-card hover:border-primary/50 transition-all duration-300 transform hover:-translate-y-1">
       <CardHeader>
         <CardTitle className="text-lg tracking-tight">{mission.title}</CardTitle>
@@ -46,10 +36,10 @@ const MissionCard = ({ mission }: { mission: Mission }) => (
 );
 
 export default function DashboardPage() {
+  const { user } = useAuth(); // <-- 2. Get the user from the context
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const fetchMissions = useCallback(async () => {
@@ -74,12 +64,13 @@ export default function DashboardPage() {
   };
 
   const missionsByStatus = missions.reduce((acc, mission) => {
-    if (!acc[mission.status]) {
-      acc[mission.status] = [];
-    }
+    if (!acc[mission.status]) acc[mission.status] = [];
     acc[mission.status].push(mission);
     return acc;
   }, {} as Record<MissionStatus, Mission[]>);
+
+  // Determine if the user has permission to create missions
+  const canCreateMissions = user?.role === 'Manager' || user?.role === 'Admin';
 
   return (
     <ProtectedRoute>
@@ -87,7 +78,14 @@ export default function DashboardPage() {
         <main className="p-4 md:p-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold tracking-tight">The Guild Dashboard</h1>
-            <Button onClick={() => setIsCreateModalOpen(true)}>Create New Mission</Button>
+            
+            {/* --- 3. THIS IS THE FIX --- */}
+            {/* Only render the button if the user has the correct role */}
+            {canCreateMissions && (
+              <Button onClick={() => setIsCreateModalOpen(true)}>Create New Mission</Button>
+            )}
+            {/* ------------------------- */}
+
           </div>
 
           {loading ? (
