@@ -34,7 +34,7 @@ export default function LoginPage() {
       const token = await loginUser(email, password);
 
       // Call the context function, which IS named 'login'
-      login(token); 
+      await login(token); 
       
     } catch (error) {
       console.error("Login failed:", error);

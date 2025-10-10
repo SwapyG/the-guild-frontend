@@ -1,73 +1,86 @@
-// src/context/AuthContext.tsx
+// src/context/AuthContext.tsx (FINAL, CORRECTED VERSION)
 
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/types';
-import apiClient from '@/services/api';
+import apiClient, { getMe } from '@/services/api'; // <-- Import getMe
 
-// Define the shape of our authentication context
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  login: (token: string) => void;
+  login: (token: string) => Promise<void>; // <-- login is now async
   logout: () => void;
   loading: boolean;
 }
 
-// Create the context with a default value of undefined
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create the AuthProvider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // This effect runs once on app load to check for an existing token
+  // This effect runs on initial app load to check for a persistent session
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-      setToken(storedToken);
-      // Set the token on our API client for all subsequent requests
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-      // Here, you would typically fetch the user profile from a '/users/me' endpoint
-      // For now, we'll just mark them as authenticated.
-      // In a real app: fetchUserProfile(storedToken).then(setUser).catch(logout);
-    }
-    setLoading(false); // Finished initial check
-  }, []);
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedToken) {
+        setToken(storedToken);
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        try {
+          // --- CHANGE #1: FETCH USER ON INITIAL LOAD ---
+          const userProfile = await getMe();
+          setUser(userProfile);
+          // ---------------------------------------------
+        } catch (error) {
+          // If the token is invalid/expired, log the user out
+          console.error("Invalid token, logging out.");
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+    initializeAuth();
+  }, []); // The empty dependency array ensures this runs only once
 
-  const login = (newToken: string) => {
+  // --- CHANGE #2: LOGIN IS NOW ASYNC AND FETCHES THE USER ---
+  const login = async (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('authToken', newToken);
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    // After login, you'd fetch the user profile
-    router.push('/dashboard'); // Redirect to the dashboard
+    try {
+      const userProfile = await getMe();
+      setUser(userProfile);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error("Failed to fetch user profile after login.", error);
+      // Handle case where login succeeds but profile fetch fails
+      logout(); 
+    }
   };
+  // ----------------------------------------------------
 
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
     delete apiClient.defaults.headers.common['Authorization'];
-    router.push('/auth/login'); // Redirect to login page
+    router.push('/auth/login');
   };
 
-  // Determine if the user is authenticated based on the presence of a token
-  const isAuthenticated = !!token;
+  const isAuthenticated = !!token && !!user;
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, loading }}>
-      {children}
+      {!loading && children} {/* Don't render children until auth check is complete */}
     </AuthContext.Provider>
   );
 };
 
-// Create a custom hook for easy access to the context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
