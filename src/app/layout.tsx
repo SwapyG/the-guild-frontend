@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from "@/context/AuthContext";
 import { Header } from "@/components/layout/Header";
-import { ThemeProvider } from "@/components/providers/ThemeProvider"; // <-- 1. IMPORT
+import { Footer } from "@/components/layout/Footer"; // <-- 1. IMPORT
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 export const metadata = {
   title: "The Guild",
@@ -23,7 +24,6 @@ export default function RootLayout({
     <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
       <head />
       <body>
-        {/* 2. WRAP everything in the ThemeProvider */}
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -34,6 +34,7 @@ export default function RootLayout({
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <div className="flex-1">{children}</div>
+              <Footer /> {/* <-- 2. ADD THE FOOTER */}
             </div>
           </AuthProvider>
           <Toaster position="bottom-right" />

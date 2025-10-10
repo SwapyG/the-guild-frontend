@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LayoutDashboard, LogOut, Code } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle"; // <-- 1. IMPORT
+import { ThemeToggle } from "./ThemeToggle";
 
 export const Header = () => {
   const { isAuthenticated, user, logout, loading } = useAuth();
@@ -23,12 +23,13 @@ export const Header = () => {
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Code className="h-6 w-6" />
-            <span className="font-bold">The Guild</span>
+            {/* --- THE CHANGE IS HERE --- */}
+            <span className="font-bold">The Guild™</span>
           </Link>
         </div>
         
-        <div className="flex flex-1 items-center justify-end space-x-2"> {/* Adjusted spacing */}
-          <ThemeToggle /> {/* <-- 2. ADD THE COMPONENT */}
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          <ThemeToggle />
           {isAuthenticated ? (
             <>
               <Button variant="ghost" asChild>
@@ -40,8 +41,8 @@ export const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.photo_url || ""} alt={user?.name} />
-                      <AvatarFallback>{user?.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+                      <AvatarImage src={user?.photo_url || ""} alt={user?.name || "User"} />
+                      <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
