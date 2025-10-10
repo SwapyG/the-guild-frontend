@@ -1,8 +1,7 @@
 // src/services/api.ts (Final, Corrected Version)
 
 import axios from 'axios';
-import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill } from '@/types';
-
+import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill, MissionStatus } from '@/types';
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
