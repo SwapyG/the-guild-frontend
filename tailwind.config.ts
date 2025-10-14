@@ -1,7 +1,7 @@
 // tailwind.config.ts
 
-import type { Config } from "tailwindcss";
-import tailwindcssAnimate from "tailwindcss-animate";
+import type { Config } from "tailwindcss"
+import tailwindcssAnimate from "tailwindcss-animate"
 
 const config = {
   darkMode: "class",
@@ -15,10 +15,11 @@ const config = {
     container: {
       center: true,
       padding: "2rem",
-      screens: { "2xl": "1400px" },
+      screens: {
+        "2xl": "1400px",
+      },
     },
     extend: {
-      // This tells Tailwind to use our CSS variable for the 'sans' font family.
       fontFamily: {
         sans: ["var(--font-geist-sans)"],
       },
@@ -44,14 +45,19 @@ const config = {
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
         "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
+        aurora: {
+          "0%, 100%": { backgroundPosition: '0% 50%' },
+          "50%": { backgroundPosition: '100% 50%' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        aurora: "aurora 20s ease-in-out infinite",
       },
     },
   },
   plugins: [tailwindcssAnimate],
-} satisfies Config;
+} satisfies Config
 
-export default config;
+export default config

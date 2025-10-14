@@ -7,7 +7,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer"; 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { CursorGlow } from "@/components/layout/CursorGlow";
+import { AnimatedBackground } from "@/components/layout/AnimatedBackground";
+import { CustomCursor } from "@/components/layout/CustomCursor";
 
 export const metadata = {
   title: "The Guild™",
@@ -29,8 +30,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+          <AnimatedBackground />
           <AuthProvider>
-            <CursorGlow />
+            <CustomCursor />
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <div className="flex-1">{children}</div>

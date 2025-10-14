@@ -51,12 +51,15 @@
 
 @layer base {
     html {
-        /* Use the standard CSS property for smooth scrolling */
         scroll-behavior: smooth;
+        /* Hide the default system cursor for the entire page */
+        cursor: none;
     }
 
     * {
         @apply border-border;
+        /* Ensure all elements, including interactive ones, hide the default cursor */
+        cursor: none;
     }
 
     body {

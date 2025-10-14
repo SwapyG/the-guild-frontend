@@ -1,3 +1,5 @@
+// src/app/LandingPageClient.tsx
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -5,25 +7,18 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { PlayCircle, Eye, Target, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { FadeIn } from "@/components/animations/FadeIn"
+import { FadeIn } from "@/components/animations/FadeIn";
 import { useAuth } from "@/context/AuthContext";
 
 export function LandingPageClient() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-background overflow-x-hidden">
+    // Set background to transparent to allow the AnimatedBackground to show through
+    <main className="flex min-h-screen flex-col items-center bg-transparent">
       
+      {/* --- Hero Section --- */}
       <section className="relative w-full flex flex-col items-center justify-center p-8 md:py-32">
-        <div 
-          className="absolute top-0 left-0 w-full h-full -z-10"
-          style={{
-            background: "radial-gradient(circle at top center, hsl(var(--primary) / 0.1), transparent 40%), radial-gradient(circle at bottom left, hsl(var(--primary) / 0.1), transparent 40%), radial-gradient(circle at bottom right, hsl(var(--accent) / 0.1), transparent 40%)",
-            backgroundSize: "200% 200%",
-            animation: "aurora 20s ease-in-out infinite",
-          }}
-        />
-        
         <div className="max-w-5xl text-center">
           <FadeIn delay={0.2} direction="down">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter">
@@ -62,8 +57,8 @@ export function LandingPageClient() {
         </div>
       </section>
 
-      <section className="relative w-full py-20 px-4 md:px-8 bg-secondary overflow-hidden">
-        <div className="absolute left-1/2 top-0 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl -z-10" />
+      {/* --- Problem Section --- */}
+      <section className="relative w-full py-20 px-4 md:px-8 bg-secondary/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto text-center">
           <FadeIn>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-12">
@@ -79,7 +74,7 @@ export function LandingPageClient() {
               { num: "03", title: "The Politics of Guesswork", desc: "Team formation is driven by intuition, not data. The 'usual suspects' get picked, while hidden talent remains unseen." },
             ].map((item, index) => (
               <FadeIn key={item.num} delay={0.2 + index * 0.2}>
-                <Card className="bg-background/50 backdrop-blur-sm border-0 shadow-none h-full transform transition-transform hover:-translate-y-2">
+                <Card className="bg-transparent border-0 shadow-none h-full">
                   <CardHeader>
                     <span className="text-5xl font-bold text-primary/40 mb-2">{item.num}</span>
                     <CardTitle className="text-2xl">{item.title}</CardTitle>
@@ -92,7 +87,8 @@ export function LandingPageClient() {
         </div>
       </section>
 
-      <section className="w-full py-24 px-4 md:px-8 bg-background">
+      {/* --- Solution Section --- */}
+      <section className="w-full py-24 px-4 md:px-8 bg-transparent">
         <div className="max-w-6xl mx-auto text-center">
           <FadeIn>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-20">
@@ -146,7 +142,7 @@ export function LandingPageClient() {
         </div>
       </section>
 
-      <section className="w-full py-24 px-4 md:px-8 bg-secondary">
+      <section className="w-full py-24 px-4 md:px-8 bg-secondary/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto text-center">
           <FadeIn>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-12">
@@ -185,7 +181,7 @@ export function LandingPageClient() {
         </div>
       </section>
       
-      <section className="w-full py-32 px-4 md:px-8 bg-background">
+      <section className="w-full py-32 px-4 md:px-8 bg-transparent">
         <div className="max-w-4xl mx-auto text-center">
           <FadeIn>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter">
