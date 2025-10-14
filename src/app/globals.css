@@ -1,12 +1,10 @@
-/* src/app/globals.css (Enterprise Polish v2) */
+/* src/app/globals.css */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-
-    /* ... (color variables remain the same) ... */
     :root {
         --background: 0 0% 100%;
         --foreground: 224 71.4% 4.1%;
@@ -67,7 +65,7 @@
         font-feature-settings: "rlig" 1, "calt" 1;
     }
 
-    /* --- NEW: Custom Scrollbar --- */
+    /* Custom Scrollbar for a professional feel */
     ::-webkit-scrollbar {
         width: 8px;
     }
@@ -86,7 +84,7 @@
     }
 }
 
-/* --- NEW: Keyframes for Background Animation --- */
+/* Keyframes for the animated aurora background */
 @keyframes aurora {
     0% {
         background-position: 0% 50%;

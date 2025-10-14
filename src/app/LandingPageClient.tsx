@@ -1,4 +1,4 @@
-// src/app/LandingPageClient.tsx (Final, Complete, Polished Version)
+// src/app/LandingPageClient.tsx
 
 "use client";
 
@@ -17,9 +17,15 @@ export function LandingPageClient() {
     <main className="flex min-h-screen flex-col items-center bg-background overflow-x-hidden">
       
       {/* --- Hero Section --- */}
-      <section className="relative w-full flex flex-col items-center justify-center p-8 md:py-32">
-        <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(#2d3748_1px,transparent_1px)] [background-size:32px_32px]"></div>
-        <div className="absolute bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_500px_at_50%_200px,#3182ce22,transparent)] -z-10"></div>
+      <section className="relative w-full flex flex-col items-center justify-center p-8 md:py-32 overflow-hidden">
+        <div 
+          className="absolute top-0 left-0 w-full h-full -z-10"
+          style={{
+            background: "radial-gradient(circle at top center, hsl(var(--primary) / 0.1), transparent 40%), radial-gradient(circle at bottom left, hsl(var(--primary) / 0.1), transparent 40%), radial-gradient(circle at bottom right, hsl(var(--accent) / 0.1), transparent 40%)",
+            backgroundSize: "200% 200%",
+            animation: "aurora 20s ease-in-out infinite",
+          }}
+        />
         
         <div className="max-w-5xl text-center">
           <FadeIn delay={0.2} direction="down">
@@ -205,7 +211,6 @@ export function LandingPageClient() {
           </FadeIn>
         </div>
       </section>
-
     </main>
   );
 }

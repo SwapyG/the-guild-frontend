@@ -12,17 +12,15 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { CursorGlow } from "@/components/layout/CursorGlow";
 
 export const metadata = {
-  title: "The Guild™", // Let's keep the trademark here
+  title: "The Guild™",
   description: "An Operating System for a Post-Job Economy.",
 };
 
-// --- THIS IS THE CORRECTED FUNCTION DEFINITION ---
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-// -------------------------------------------------
   return (
     <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
       <head />
