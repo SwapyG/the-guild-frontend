@@ -10,8 +10,7 @@ import Image from "next/image";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { LandingPageClient } from "./LandingPageClient";
 
+
 export default function LandingPage() {
-  // This page is now a simple, fast Server Component
-  // that renders our interactive Client Component.
   return <LandingPageClient />;
 }

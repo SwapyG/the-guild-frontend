@@ -1,5 +1,3 @@
-// src/app/LandingPageClient.tsx
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -7,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { PlayCircle, Eye, Target, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { FadeIn } from "@/components/animations/FadeIn";
+import { FadeIn } from "@/components/animations/FadeIn"
 import { useAuth } from "@/context/AuthContext";
 
 export function LandingPageClient() {
@@ -16,8 +14,7 @@ export function LandingPageClient() {
   return (
     <main className="flex min-h-screen flex-col items-center bg-background overflow-x-hidden">
       
-      {/* --- Hero Section --- */}
-      <section className="relative w-full flex flex-col items-center justify-center p-8 md:py-32 overflow-hidden">
+      <section className="relative w-full flex flex-col items-center justify-center p-8 md:py-32">
         <div 
           className="absolute top-0 left-0 w-full h-full -z-10"
           style={{
@@ -65,7 +62,6 @@ export function LandingPageClient() {
         </div>
       </section>
 
-      {/* --- Problem Section --- */}
       <section className="relative w-full py-20 px-4 md:px-8 bg-secondary overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl -z-10" />
         <div className="max-w-6xl mx-auto text-center">
@@ -96,7 +92,6 @@ export function LandingPageClient() {
         </div>
       </section>
 
-      {/* --- Solution Section --- */}
       <section className="w-full py-24 px-4 md:px-8 bg-background">
         <div className="max-w-6xl mx-auto text-center">
           <FadeIn>
@@ -151,7 +146,6 @@ export function LandingPageClient() {
         </div>
       </section>
 
-      {/* --- How-It-Works Section --- */}
       <section className="w-full py-24 px-4 md:px-8 bg-secondary">
         <div className="max-w-4xl mx-auto text-center">
           <FadeIn>
@@ -191,7 +185,6 @@ export function LandingPageClient() {
         </div>
       </section>
       
-      {/* --- Final CTA Section --- */}
       <section className="w-full py-32 px-4 md:px-8 bg-background">
         <div className="max-w-4xl mx-auto text-center">
           <FadeIn>

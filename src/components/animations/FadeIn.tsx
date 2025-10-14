@@ -1,6 +1,5 @@
-// src/components/animations/FadeIn.tsx
-
 "use client";
+
 import { motion, useAnimation, useInView, Variants } from "framer-motion";
 import { useEffect, useRef } from "react";
 
@@ -27,9 +26,7 @@ export const FadeIn = ({
     }
   }, [isInView, controls]);
 
-// Inside src/components/animations/FadeIn.tsx
-
- const variants: Variants = { 
+  const variants: Variants = {
     hidden: {
       opacity: 0,
       y: direction === "up" ? 20 : direction === "down" ? -20 : 0,
@@ -42,7 +39,7 @@ export const FadeIn = ({
       transition: {
         duration: 0.6,
         delay,
-        ease: "easeInOut", 
+        ease: "easeInOut",
       },
     },
   };

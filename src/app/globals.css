@@ -1,5 +1,3 @@
-/* src/app/globals.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -53,7 +51,8 @@
 
 @layer base {
     html {
-        @apply scroll-smooth;
+        /* Use the standard CSS property for smooth scrolling */
+        scroll-behavior: smooth;
     }
 
     * {
@@ -65,7 +64,6 @@
         font-feature-settings: "rlig" 1, "calt" 1;
     }
 
-    /* Custom Scrollbar for a professional feel */
     ::-webkit-scrollbar {
         width: 8px;
     }
@@ -84,7 +82,6 @@
     }
 }
 
-/* Keyframes for the animated aurora background */
 @keyframes aurora {
     0% {
         background-position: 0% 50%;
