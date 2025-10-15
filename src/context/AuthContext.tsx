@@ -11,7 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  login: (token: string) => Promise<void>; // <-- login is now async
+  login: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // This effect runs on initial app load to check for a persistent session
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('authToken');
@@ -32,22 +31,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(storedToken);
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         try {
-          // --- CHANGE #1: FETCH USER ON INITIAL LOAD ---
           const userProfile = await getMe();
           setUser(userProfile);
-          // ---------------------------------------------
         } catch (error) {
-          // If the token is invalid/expired, log the user out
-          console.error("Invalid token, logging out.");
+          console.error("Stored token is invalid, logging out.", error);
           logout();
         }
       }
       setLoading(false);
     };
     initializeAuth();
-  }, []); // The empty dependency array ensures this runs only once
+  }, []);
 
-  // --- CHANGE #2: LOGIN IS NOW ASYNC AND FETCHES THE USER ---
   const login = async (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('authToken', newToken);
@@ -58,11 +53,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       router.push('/dashboard');
     } catch (error) {
       console.error("Failed to fetch user profile after login.", error);
-      // Handle case where login succeeds but profile fetch fails
       logout(); 
     }
   };
-  // ----------------------------------------------------
 
   const logout = () => {
     setUser(null);
@@ -76,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, loading }}>
-      {!loading && children} {/* Don't render children until auth check is complete */}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
