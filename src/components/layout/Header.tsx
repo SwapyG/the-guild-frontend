@@ -1,4 +1,4 @@
-// src/components/layout/Header.tsx
+// src/components/layout/Header.tsx (Corrected with Profile Link)
 
 "use client";
 
@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, LogOut, Code } from "lucide-react";
+import { LayoutDashboard, LogOut, Code, User as UserIcon } from "lucide-react"; // <-- Import UserIcon
 import { ThemeToggle } from "./ThemeToggle";
 
 export const Header = () => {
@@ -23,7 +23,6 @@ export const Header = () => {
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Code className="h-6 w-6" />
-            {/* --- THE CHANGE IS HERE --- */}
             <span className="font-bold">The Guild™</span>
           </Link>
         </div>
@@ -56,6 +55,16 @@ export const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  
+                  {/* --- THIS IS THE NEWLY ADDED LINK --- */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {/* ------------------------------------ */}
+
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
