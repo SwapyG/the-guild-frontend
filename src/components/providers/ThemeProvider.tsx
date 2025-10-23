@@ -1,17 +1,34 @@
-// src/components/providers/ThemeProvider.tsx (Corrected)
-
 "use client";
 
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-// --- THE FIX IS HERE ---
-// Instead of importing the type from a deep path, we use React's built-in
-// ComponentProps utility type to get the props directly from the provider component.
-// This is a much more stable and future-proof way to do it.
-type ThemeProviderProps = React.ComponentProps<typeof NextThemesProvider>;
-// ---------------------
+/**
+ * Custom ThemeProvider with smooth theme transitions
+ * and hydration-safe flicker prevention.
+ */
+export function ThemeProvider({
+  children,
+  ...props
+}: React.ComponentProps<typeof NextThemesProvider>) {
+  // Disable transitions during SSR to prevent flash/flicker
+  React.useEffect(() => {
+    document.documentElement.dataset.themeTransition = "false";
+    const timeout = setTimeout(() => {
+      document.documentElement.dataset.themeTransition = "true";
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, []);
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  );
 }

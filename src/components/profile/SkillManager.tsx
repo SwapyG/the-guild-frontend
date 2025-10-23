@@ -1,125 +1,243 @@
-// src/components/profile/SkillManager.tsx
+// src/components/profile/SkillManager.tsx (Final - Polished and Aligned)
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import { UserSkill, Skill, SkillProficiency } from '@/types';
-import { getSkills, addSkillToUser, removeSkillFromUser, AddSkillPayload } from '@/services/api';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { X, PlusCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect, useMemo } from "react";
+import { UserSkill, Skill, SkillProficiency } from "@/types";
+import {
+  addSkillToUser,
+  removeSkillFromUser,
+  getSkills,
+} from "@/services/api";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { X, PlusCircle, ChevronsUpDown, Check } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { SkillBadge } from "./SkillBadge";
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 
 interface SkillManagerProps {
   initialSkills: UserSkill[];
 }
 
 export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
-  const [userSkills, setUserSkills] = useState(initialSkills);
+  const [userSkills, setUserSkills] = useState<UserSkill[]>(initialSkills);
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
-  
-  // State for the "Add New" form
-  const [selectedSkillId, setSelectedSkillId] = useState<string>('');
-  const [selectedProficiency, setSelectedProficiency] = useState<SkillProficiency>('Intermediate');
-  
+  const [selectedSkillId, setSelectedSkillId] = useState<string>("");
+  const [selectedProficiency, setSelectedProficiency] =
+    useState<SkillProficiency>("Intermediate");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
 
+  // Fetch all available skills once
   useEffect(() => {
-    // Fetch the master list of all skills for the dropdown
-    getSkills().then(setAllSkills).catch(console.error);
+    getSkills()
+      .then(setAllSkills)
+      .catch(() => toast.error("Failed to load skills list."));
   }, []);
+
+  const availableSkills = useMemo(
+    () =>
+      allSkills
+        .filter(
+          (skill) => !userSkills.some((userSkill) => userSkill.skill.id === skill.id)
+        )
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [allSkills, userSkills]
+  );
+
+  const handleProficiencyChange = async (
+    skillId: string,
+    proficiency: SkillProficiency
+  ) => {
+    setIsSubmitting(true);
+    const toastId = toast.loading("Updating proficiency...");
+    try {
+      const updatedUser = await addSkillToUser({ skill_id: skillId, proficiency });
+      setUserSkills(updatedUser.skills);
+      toast.success("Proficiency updated!", { id: toastId });
+    } catch {
+      toast.error("Failed to update proficiency.", { id: toastId });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleAddSkill = async () => {
     if (!selectedSkillId) {
-      toast.error('Please select a skill to add.');
+      toast.error("Please select a skill to add.");
       return;
     }
-    
     setIsSubmitting(true);
-    const payload: AddSkillPayload = {
-      skill_id: selectedSkillId,
-      proficiency: selectedProficiency,
-    };
-
-    const toastId = toast.loading('Adding skill...');
+    const toastId = toast.loading("Adding skill...");
     try {
-      const updatedUser = await addSkillToUser(payload);
+      const updatedUser = await addSkillToUser({
+        skill_id: selectedSkillId,
+        proficiency: selectedProficiency,
+      });
       setUserSkills(updatedUser.skills);
-      toast.success('Skill added!', { id: toastId });
-      // Reset form
-      setSelectedSkillId('');
-    } catch (error) {
-      toast.error('Failed to add skill.', { id: toastId });
-      console.error(error);
+      toast.success("Skill added!", { id: toastId });
+      setSelectedSkillId("");
+    } catch {
+      toast.error("Failed to add skill.", { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleRemoveSkill = async (skillId: string) => {
-    const toastId = toast.loading('Removing skill...');
+    setIsSubmitting(true);
+    const toastId = toast.loading("Removing skill...");
     try {
       const updatedUser = await removeSkillFromUser(skillId);
       setUserSkills(updatedUser.skills);
-      toast.success('Skill removed!', { id: toastId });
-    } catch (error) {
-      toast.error('Failed to remove skill.', { id: toastId });
-      console.error(error);
+      toast.success("Skill removed!", { id: toastId });
+    } catch {
+      toast.error("Failed to remove skill.", { id: toastId });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Filter out skills the user already has from the dropdown
-  const availableSkills = allSkills.filter(
-    skill => !userSkills.some(userSkill => userSkill.skill.id === skill.id)
-  );
-
   return (
-    <div className="space-y-6">
-      {/* List of current skills */}
-      <div className="space-y-2">
+    <div className="space-y-8">
+      {/* Current Skills */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Your Current Skills</h3>
         {userSkills.length > 0 ? (
-          userSkills.map(({ skill, proficiency }) => (
-            <div key={skill.id} className="flex items-center justify-between p-3 bg-secondary rounded-md">
-              <div>
-                <p className="font-semibold">{skill.name}</p>
-                <Badge variant="outline" className="mt-1">{proficiency}</Badge>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => handleRemoveSkill(skill.id)}>
-                <X className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userSkills.map((userSkill) => (
+              <SkillBadge
+                key={userSkill.skill.id}
+                userSkill={userSkill}
+                onProficiencyChange={handleProficiencyChange}
+                onRemove={handleRemoveSkill}
+                isUpdating={isSubmitting}
+              />
+            ))}
+          </div>
         ) : (
-          <p className="text-sm text-muted-foreground">You haven't added any skills yet.</p>
+          <p className="text-sm text-muted-foreground">
+            You haven't added any skills yet.
+          </p>
         )}
       </div>
 
-      {/* Form to add a new skill */}
-      <div className="flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg">
-        <div className="w-full md:w-1/2">
-          <Select onValueChange={setSelectedSkillId} value={selectedSkillId}>
-            <SelectTrigger><SelectValue placeholder="Select a skill to add..." /></SelectTrigger>
-            <SelectContent>
-              {availableSkills.map(skill => (
-                <SelectItem key={skill.id} value={skill.id}>{skill.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-full md:w-1/4">
-           <Select onValueChange={(value) => setSelectedProficiency(value as SkillProficiency)} defaultValue={selectedProficiency}>
-            <SelectTrigger><SelectValue placeholder="Proficiency" /></SelectTrigger>
-            <SelectContent>
-              {(['Beginner', 'Intermediate', 'Advanced', 'Expert'] as SkillProficiency[]).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-full md:w-1/4">
-          <Button className="w-full" onClick={handleAddSkill} disabled={isSubmitting}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Skill
-          </Button>
+      {/* Add New Skill */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Add New Skill</h3>
+        <div className="flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-card shadow-sm">
+          {/* Skill Selector */}
+          <div className="w-full flex-1">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between"
+                >
+                  {selectedSkillId
+                    ? allSkills.find((skill) => skill.id === selectedSkillId)?.name
+                    : "Select a skill to add..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent
+                align="start"
+                sideOffset={6}
+                className="min-w-[var(--radix-popover-trigger-width)] p-0 rounded-md shadow-lg dark:shadow-primary/10 border bg-popover"
+              >
+                <Command>
+                  <CommandInput
+                    placeholder="Search skills..."
+                    className="border-b border-muted px-3 py-2 focus:ring-0 focus:outline-none text-sm"
+                  />
+                  <CommandEmpty>No skill found.</CommandEmpty>
+                  <CommandGroup>
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {availableSkills.map((skill) => (
+                        <CommandItem
+                          key={skill.id}
+                          value={skill.name}
+                          onSelect={() => {
+                            setSelectedSkillId(
+                              skill.id === selectedSkillId ? "" : skill.id
+                            );
+                            setOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center transition-colors cursor-pointer"
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedSkillId === skill.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {skill.name}
+                        </CommandItem>
+                      ))}
+                    </div>
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Proficiency Selector */}
+          <div className="w-full md:w-auto">
+            <Select
+              onValueChange={(value) =>
+                setSelectedProficiency(value as SkillProficiency)
+              }
+              defaultValue={selectedProficiency}
+            >
+              <SelectTrigger className="w-full md:w-[150px]">
+                <SelectValue placeholder="Proficiency" />
+              </SelectTrigger>
+              <SelectContent side="bottom">
+                <SelectItem value="Beginner">Beginner</SelectItem>
+                <SelectItem value="Intermediate">Intermediate</SelectItem>
+                <SelectItem value="Advanced">Advanced</SelectItem>
+                <SelectItem value="Expert">Expert</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Add Button */}
+          <div className="w-full md:w-auto">
+            <Button
+              className="w-full"
+              onClick={handleAddSkill}
+              disabled={isSubmitting || !selectedSkillId}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Skill
+            </Button>
+          </div>
         </div>
       </div>
     </div>

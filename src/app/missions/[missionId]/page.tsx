@@ -1,4 +1,4 @@
-// src/app/missions/[missionId]/page.tsx (FINAL, CORRECTED STATE MANAGEMENT)
+// src/app/missions/[missionId]/page.tsx (Definitive, Corrected Version)
 
 "use client";
 
@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getMissionById } from '@/services/api';
 import { Mission, MissionRole } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +17,25 @@ import { toast } from 'react-hot-toast';
 import { DraftMemberModal } from '@/components/missions/DraftMemberModal';
 import { PitchModal } from '@/components/missions/PitchModal';
 import { PitchList } from '@/components/missions/PitchList';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
-const RoleCard = ({ role, onDraftClick }: { role: MissionRole, onDraftClick: (roleId: string) => void }) => (
+const MissionLoadingState = () => (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-muted-foreground">
+        <Loader2 className="h-12 w-12 animate-spin mb-4" />
+        <h2 className="text-xl font-semibold">Loading Mission Data...</h2>
+        <p>Acquiring tactical overview.</p>
+    </div>
+);
+
+const RoleCard = ({ 
+    role, 
+    onDraftClick,
+    canDraft
+}: { 
+    role: MissionRole, 
+    onDraftClick: (roleId: string) => void,
+    canDraft: boolean 
+}) => (
     <Card className="bg-secondary">
       <CardContent className="p-4 flex items-center justify-between">
         <div>
@@ -39,7 +57,7 @@ const RoleCard = ({ role, onDraftClick }: { role: MissionRole, onDraftClick: (ro
             </div>
           </div>
         ) : (
-          <Button size="sm" onClick={() => onDraftClick(role.id)}>Draft Member</Button>
+          canDraft && <Button size="sm" onClick={() => onDraftClick(role.id)}>Draft Member</Button>
         )}
       </CardContent>
     </Card>
@@ -47,8 +65,12 @@ const RoleCard = ({ role, onDraftClick }: { role: MissionRole, onDraftClick: (ro
 
 export default function MissionDetailPage() { 
   const params = useParams();
-  const missionId = params.missionsId as string; 
+  // --- NANO: CRITICAL CORRECTION ---
+  // The parameter name now correctly matches the folder name `[missionId]`.
+  const missionId = params.missionId as string; 
+  // -------------------------------
 
+  const { user } = useAuth();
   const [mission, setMission] = useState<Mission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,28 +78,29 @@ export default function MissionDetailPage() {
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
-
-  // --- THIS IS THE FIX: A state variable to trigger re-renders ---
   const [pitchListKey, setPitchListKey] = useState(Date.now());
 
-  const fetchMission = useCallback(async () => {
-    if (!missionId) return;
-    try {
-      setLoading(true);
-      const data = await getMissionById(missionId);
-      setMission(data);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching mission:", err);
-      setError('Failed to fetch mission details.');
-    } finally {
-      setLoading(false);
-    }
-  }, [missionId]);
-
   useEffect(() => {
+    if (!missionId) {
+      return; 
+    }
+
+    const fetchMission = async () => {
+      setLoading(true);
+      try {
+        const data = await getMissionById(missionId);
+        setMission(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching mission:", err);
+        setError('Failed to fetch mission details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchMission();
-  }, [fetchMission]);
+  }, [missionId]);
 
   const handleOpenDraftModal = (roleId: string) => {
     setSelectedRoleId(roleId);
@@ -85,33 +108,42 @@ export default function MissionDetailPage() {
   };
   
   const handleDraftSuccess = () => {
-    fetchMission();
+    if (missionId) {
+        const refetch = async () => {
+            const data = await getMissionById(missionId);
+            setMission(data);
+        };
+        refetch();
+        toast.success("Role assigned successfully.");
+    }
+    setIsDraftModalOpen(false);
   };
 
-  // --- THIS IS THE FIX: Update the key on success ---
   const handlePitchSuccess = () => {
     toast.success("Pitch submitted! The mission lead has been notified.");
-    // Update the key to a new value, forcing the PitchList component to re-mount and re-fetch.
     setPitchListKey(Date.now());
   };
 
-  if (loading) return <div className="p-8 text-center">Loading Mission...</div>;
+  const isMissionLead = user?.id === mission?.lead_user_id;
+
+  if (loading) return <main className="container mx-auto max-w-4xl py-12 px-4"><MissionLoadingState /></main>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
   if (!mission) return <div className="p-8 text-center">Mission not found.</div>;
 
   return (
     <>
-      <main className="p-8">
-        <div className="max-w-4xl mx-auto">
-          {/* ... Header and Roles sections are the same ... */}
-          <div className="mb-4">
-            <Link href="/dashboard" className="text-sm text-primary hover:underline">
-              &larr; Back to Dashboard
-            </Link>
+      <main className="container mx-auto max-w-4xl py-12 px-4">
+          <div className="mb-6">
+            <Button variant="ghost" asChild>
+                <Link href="/mission-command" className="text-sm text-primary hover:underline">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Mission Command
+                </Link>
+            </Button>
           </div>
           <header className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-4xl font-bold">{mission.title}</h1>
+              <h1 className="text-4xl font-bold tracking-tight">{mission.title}</h1>
               <div className="flex items-center gap-2 mt-2 text-muted-foreground">
                 <span>Led by:</span>
                 <div className="flex items-center gap-2 font-semibold">
@@ -123,29 +155,25 @@ export default function MissionDetailPage() {
                 </div>
               </div>
             </div>
-            <Button onClick={() => setIsPitchModalOpen(true)}>Pitch for this Mission</Button>
+            {!isMissionLead && <Button onClick={() => setIsPitchModalOpen(true)}>Pitch for this Mission</Button>}
           </header>
           <p className="mb-8 text-lg text-muted-foreground">{mission.description}</p>
           <Separator className="my-8" />
           <section>
-            <h2 className="text-3xl font-semibold mb-6">Mission Roles</h2>
+            <h2 className="text-2xl font-semibold mb-6">Mission Roles</h2>
             <div className="space-y-4">
               {mission.roles.map((role) => (
-                <RoleCard key={role.id} role={role} onDraftClick={handleOpenDraftModal} />
+                <RoleCard key={role.id} role={role} onDraftClick={handleOpenDraftModal} canDraft={isMissionLead} />
               ))}
             </div>
           </section>
-
           <Separator className="my-8" />
           <section>
-            <h2 className="text-3xl font-semibold mb-6">Aspiration Ledger (Pitches)</h2>
-            {/* --- THIS IS THE FIX: Pass the key to the component --- */}
+            <h2 className="text-2xl font-semibold mb-6">Aspiration Ledger (Pitches)</h2>
             <PitchList key={pitchListKey} missionId={mission.id} />
           </section>
-        </div>
       </main>
 
-      {/* ... Modals are the same ... */}
        <DraftMemberModal 
         isOpen={isDraftModalOpen}
         onClose={() => setIsDraftModalOpen(false)}

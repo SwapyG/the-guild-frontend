@@ -1,16 +1,15 @@
-// src/types/index.ts (Updated for Skill Ledger)
+// src/types/index.ts (Complete & Final)
 
 export type UserRole = 'Member' | 'Manager' | 'Admin';
 export type SkillProficiency = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 export type MissionStatus = 'Proposed' | 'Active' | 'Completed';
 export type PitchStatus = 'Submitted' | 'Accepted' | 'Rejected';
+export type InviteStatus = 'Pending' | 'Accepted' | 'Declined';
 
-// --- NEW: This interface defines the nested skill object in a user's profile ---
 export interface UserSkill {
   skill: Skill;
   proficiency: SkillProficiency;
 }
-// -------------------------------------------------------------------------
 
 export interface User {
   id: string;
@@ -19,7 +18,7 @@ export interface User {
   title: string;
   photo_url?: string;
   role: UserRole;
-  skills: UserSkill[]; // <-- UPDATED: The User type now includes their skills
+  skills: UserSkill[];
 }
 
 export interface Skill {
@@ -36,6 +35,7 @@ export interface Mission {
   created_at: string;
   lead: User;
   roles: MissionRole[];
+  pitches: MissionPitch[];
 }
 
 export interface MissionRole {
@@ -46,7 +46,6 @@ export interface MissionRole {
   proficiency_required: SkillProficiency;
   assignee?: User;
   required_skill: Skill;
-  mission: Mission;
 }
 
 export interface MissionPitch {
@@ -57,3 +56,32 @@ export interface MissionPitch {
   status: PitchStatus;
   user: User;
 }
+
+// --- NANO: NEW TYPE FOR THE INVITATION SYSTEM ---
+export interface MissionInvite {
+    id: string;
+    mission_role: MissionRole;
+    invited_user: User;
+    inviting_user: User;
+    status: InviteStatus;
+    created_at: string;
+}
+// ---------------------------------------------
+
+// This is constructed on the frontend now, but the type is still useful.
+export interface MissionHistoryItem {
+    mission_id: string;
+    mission_title: string;
+    role: string;
+    status: MissionStatus;
+}
+
+// --- NANO: NEW TYPE FOR NOTIFICATIONS ---
+export interface Notification {
+    id: string;
+    message: string;
+    link?: string;
+    is_read: boolean;
+    created_at: string;
+}
+// ------------------------------------

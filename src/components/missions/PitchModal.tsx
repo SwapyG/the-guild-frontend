@@ -1,15 +1,22 @@
-// src/components/missions/PitchModal.tsx (Corrected for Auth)
-
 "use client";
 
-import { useState } from 'react';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import { pitchForMission } from '@/services/api';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import { pitchForMission } from "@/services/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 interface PitchModalProps {
   isOpen: boolean;
@@ -18,39 +25,48 @@ interface PitchModalProps {
   onPitchSuccess: () => void;
 }
 
-// The hardcoded user ID is now completely removed.
-
-export const PitchModal = ({ isOpen, onClose, missionId, onPitchSuccess }: PitchModalProps) => {
-  const [pitchText, setPitchText] = useState('');
+export const PitchModal = ({
+  isOpen,
+  onClose,
+  missionId,
+  onPitchSuccess,
+}: PitchModalProps) => {
+  const [pitchText, setPitchText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isOpen && textAreaRef.current) {
+      setTimeout(() => textAreaRef.current?.focus(), 200);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
-    if (!missionId || !pitchText.trim()) return;
+    if (!missionId || !pitchText.trim()) {
+      toast.error("Please write your pitch before submitting.");
+      return;
+    }
 
     setIsSubmitting(true);
-    const toastId = toast.loading('Submitting your pitch...');
+    const toastId = toast.loading("Submitting your pitch...");
 
     try {
-      // --- THE FIX IS HERE: No longer passing the user ID ---
-      await pitchForMission(missionId, pitchText);
-      // ----------------------------------------------------
-      
-      toast.success('Pitch submitted successfully!', { id: toastId });
+      await pitchForMission(missionId, pitchText.trim());
+      toast.success("Pitch submitted successfully!", { id: toastId });
+      setPitchText("");
       onPitchSuccess();
       onClose();
-      setPitchText('');
     } catch (error) {
-      console.error('Failed to submit pitch:', error);
-      
-      let errorMessage = 'An unexpected error occurred.';
+      console.error("Failed to submit pitch:", error);
+      let message = "An unexpected error occurred. Please try again.";
       if (axios.isAxiosError(error) && error.response) {
-        if (error.response.status === 409) {
-          errorMessage = "You have already pitched for this mission.";
-        } else {
-          errorMessage = `An API error occurred: ${error.response.data.detail || error.response.statusText}`;
-        }
+        if (error.response.status === 409)
+          message = "You’ve already pitched for this mission.";
+        else if (error.response.status === 401)
+          message = "You must be logged in to submit a pitch.";
+        else message = error.response.data.detail || message;
       }
-      toast.error(errorMessage, { id: toastId });
+      toast.error(message, { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -58,31 +74,61 @@ export const PitchModal = ({ isOpen, onClose, missionId, onPitchSuccess }: Pitch
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Pitch for this Mission</DialogTitle>
-          <DialogDescription>
-            Explain why you're a great fit for this mission. Your pitch will be visible to the mission lead.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="pitch">Your Pitch</Label>
-            <Textarea
-              id="pitch"
-              placeholder="I have extensive experience in..."
-              value={pitchText}
-              onChange={(e) => setPitchText(e.target.value)}
-              rows={6}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !pitchText.trim()}>
-            {isSubmitting ? 'Submitting...' : 'Submit Pitch'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+      <AnimatePresence>
+        {isOpen && (
+          <DialogContent className="sm:max-w-[500px] rounded-2xl backdrop-blur-md bg-background/80 border border-border/40 shadow-2xl">
+            <motion.div
+              key="pitch-modal"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <DialogHeader>
+                <DialogTitle className="text-lg font-semibold">
+                  Pitch for this Mission
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Explain why you’re a great fit — your pitch will be visible to
+                  the mission lead.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4 py-4">
+                <div className="grid w-full gap-1.5">
+                  <Label htmlFor="pitch">Your Pitch</Label>
+                  <Textarea
+                    ref={textAreaRef}
+                    id="pitch"
+                    placeholder="I have extensive experience in..."
+                    value={pitchText}
+                    onChange={(e) => setPitchText(e.target.value)}
+                    rows={6}
+                    className="resize-none focus:ring-2 focus:ring-primary/50 border-border/40"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !pitchText.trim()}
+                  className="min-w-[120px]"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Pitch"
+                  )}
+                </Button>
+              </DialogFooter>
+            </motion.div>
+          </DialogContent>
+        )}
+      </AnimatePresence>
     </Dialog>
   );
 };

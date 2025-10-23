@@ -1,113 +1,97 @@
-// src/components/layout/CustomCursor.tsx (Corrected with pointer-events-none)
-
+// src/components/layout/CustomCursor.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, useSpring, useMotionValue, Variants } from "framer-motion";
-import { cn } from "@/lib/utils";
-
-// From your globals.css, --primary is '220 90% 50%'.
-const primaryColorValue = "220 90% 50%";
+import { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 
 export const CustomCursor = () => {
-  const [isHovering, setIsHovering] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  
-  const springConfig = { damping: 30, stiffness: 200, mass: 0.7 };
-  const springX = useSpring(cursorX, springConfig);
-  const springY = useSpring(cursorY, springConfig);
+  const outerRef = useRef<HTMLDivElement>(null);
+  const coreRef = useRef<HTMLDivElement>(null);
+  const trailRef = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
+    const outer = outerRef.current!;
+    const core = coreRef.current!;
+    const trail = trailRef.current!;
+    const isDark = theme === "dark";
+
+    // positions
+    let targetX = -100, targetY = -100;
+    let outerX = -100, outerY = -100;
+    let trailX = -100, trailY = -100;
+
+    // flags
+    let hovering = false, pressing = false;
+
+    // style params
+    const BASE = 42, HOVER = 54, PRESS = 32;
+    const OUTER_LERP = 0.25, TRAIL_LERP = 0.12;
+
+    const glow = isDark ? "rgba(147,197,253,0.28)" : "rgba(59,130,246,0.24)";
+    const coreColor = isDark ? "rgba(147,197,253,0.92)" : "rgba(37,99,235,0.9)";
+
+    const setStyle = (el: HTMLElement, size: number, color: string, blur = 0) => {
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.background = color;
+      el.style.filter = blur ? `blur(${blur}px)` : "none";
+      el.style.borderRadius = "50%";
+      el.style.pointerEvents = "none";
+      el.style.position = "fixed";
+      el.style.zIndex = "9999";
     };
 
-    const handleMouseEnter = () => setIsHovering(true);
-    const handleMouseLeave = () => setIsHovering(false);
+    setStyle(outer, BASE, glow, 6);
+    setStyle(core, 8, coreColor);
+    setStyle(trail, BASE, glow, 12);
 
-    const handleMouseDown = () => setIsPressed(true);
-    const handleMouseUp = () => setIsPressed(false);
+    const update = () => {
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      outerX = lerp(outerX, targetX, OUTER_LERP);
+      outerY = lerp(outerY, targetY, OUTER_LERP);
+      trailX = lerp(trailX, targetX, TRAIL_LERP);
+      trailY = lerp(trailY, targetY, TRAIL_LERP);
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mouseup", handleMouseUp);
-    
-    const interactiveElements = document.querySelectorAll('a, button, [role="button"], input, textarea, select');
-    interactiveElements.forEach(el => {
-      el.addEventListener('mouseenter', handleMouseEnter);
-      el.addEventListener('mouseleave', handleMouseLeave);
-    });
-    
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mousedown", handleMouseDown);
-      window.removeEventListener("mouseup", handleMouseUp);
-      interactiveElements.forEach(el => {
-        el.removeEventListener('mouseenter', handleMouseEnter);
-        el.removeEventListener('mouseleave', handleMouseLeave);
+      const outerSize = pressing ? PRESS : hovering ? HOVER : BASE;
+
+      outer.style.transform = `translate3d(${outerX - outerSize / 2}px, ${outerY - outerSize / 2}px, 0)`;
+      outer.style.width = outer.style.height = `${outerSize}px`;
+
+      core.style.transform = `translate3d(${targetX - 4}px, ${targetY - 4}px, 0) scale(${pressing ? 0.5 : hovering ? 0.8 : 1})`;
+      trail.style.transform = `translate3d(${trailX - BASE / 2}px, ${trailY - BASE / 2}px, 0)`;
+
+      requestAnimationFrame(update);
+    };
+    update();
+
+    const move = (e: MouseEvent) => { targetX = e.clientX; targetY = e.clientY; };
+    const down = () => (pressing = true);
+    const up = () => (pressing = false);
+    const enter = () => (hovering = true);
+    const leave = () => (hovering = false);
+
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mousedown", down);
+    window.addEventListener("mouseup", up);
+    document.querySelectorAll("a, button, input, textarea, select, [role='button']")
+      .forEach((el) => {
+        el.addEventListener("mouseenter", enter);
+        el.addEventListener("mouseleave", leave);
       });
+
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mousedown", down);
+      window.removeEventListener("mouseup", up);
     };
-  }, [cursorX, cursorY]);
-
-  const cursorVariants: Variants = {
-    default: {
-      scale: 1,
-      backgroundColor: `hsla(${primaryColorValue}, 0)`,
-    },
-    hover: {
-      scale: 1.5,
-      backgroundColor: `hsla(${primaryColorValue}, 0.2)`,
-    },
-    press: {
-      scale: 0.8,
-      backgroundColor: `hsla(${primaryColorValue}, 0.3)`,
-    }
-  };
-
-  const dotSize = 8;
-  const outlineSize = 40;
+  }, [theme]);
 
   return (
     <>
-      {/* The trailing outline circle */}
-      <motion.div
-        // --- NANO: CRITICAL FIX ---
-        // The 'pointer-events-none' class makes this div invisible to clicks,
-        // allowing interactions to pass through to the elements underneath.
-        className="pointer-events-none fixed z-[9999] rounded-full border-2 border-primary"
-        // -------------------------
-        variants={cursorVariants}
-        animate={isPressed ? "press" : isHovering ? "hover" : "default"}
-        style={{
-          translateX: springX,
-          translateY: springY,
-          width: outlineSize,
-          height: outlineSize,
-          left: -outlineSize / 2,
-          top: -outlineSize / 2,
-        }}
-      />
-      {/* The precise center dot */}
-      <motion.div
-        // --- NANO: CRITICAL FIX ---
-        // This must also be non-interactive.
-        className="pointer-events-none fixed z-[9999] rounded-full bg-primary"
-        // -------------------------
-        animate={{ scale: isPressed ? 0.5 : isHovering ? 0 : 1 }}
-        transition={{ type: "spring", stiffness: 500, damping: 20 }}
-        style={{
-          translateX: cursorX,
-          translateY: cursorY,
-          left: -dotSize / 2,
-          top: -dotSize / 2,
-          width: dotSize,
-          height: dotSize,
-        }}
-      />
+      <div ref={trailRef}></div>
+      <div ref={outerRef}></div>
+      <div ref={coreRef}></div>
     </>
   );
 };
