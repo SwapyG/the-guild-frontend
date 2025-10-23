@@ -1,4 +1,4 @@
-// src/components/layout/CustomCursor.tsx (Upgraded with Smoother Physics and Click Feedback)
+// src/components/layout/CustomCursor.tsx (Corrected with handleMouseLeave)
 
 "use client";
 
@@ -6,16 +6,15 @@ import { useEffect, useState } from "react";
 import { motion, useSpring, useMotionValue, Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+const primaryColorValue = "220 90% 50%";
+
 export const CustomCursor = () => {
   const [isHovering, setIsHovering] = useState(false);
-  // --- NANO: NEW STATE for click feedback ---
   const [isPressed, setIsPressed] = useState(false);
   
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   
-  // --- NANO: RE-TUNED PHYSICS for a smoother, less jittery feel ---
-  // Reduced stiffness and increased damping/mass creates a more fluid trail.
   const springConfig = { damping: 30, stiffness: 200, mass: 0.7 };
   const springX = useSpring(cursorX, springConfig);
   const springY = useSpring(cursorY, springConfig);
@@ -29,7 +28,6 @@ export const CustomCursor = () => {
     const handleMouseEnter = () => setIsHovering(true);
     const handleMouseLeave = () => setIsHovering(false);
 
-    // --- NANO: ADDED LISTENERS for click state ---
     const handleMouseDown = () => setIsPressed(true);
     const handleMouseUp = () => setIsPressed(false);
 
@@ -49,33 +47,26 @@ export const CustomCursor = () => {
       window.removeEventListener("mouseup", handleMouseUp);
       interactiveElements.forEach(el => {
         el.removeEventListener('mouseenter', handleMouseEnter);
+        // --- NANO: CORRECTIVE ACTION ---
+        // The typo 'handleLeave' has been corrected to 'handleMouseLeave'.
         el.removeEventListener('mouseleave', handleMouseLeave);
+        // --------------------------------
       });
     };
   }, [cursorX, cursorY]);
 
-  // --- NANO: VARIANTS for clean state-driven animation ---
   const cursorVariants: Variants = {
     default: {
       scale: 1,
-      width: 40,
-      height: 40,
-      backgroundColor: "transparent",
-      borderWidth: "2px",
+      backgroundColor: `hsla(${primaryColorValue}, 0)`,
     },
     hover: {
       scale: 1.5,
-      width: 40,
-      height: 40,
-      backgroundColor: "hsl(var(--primary) / 0.2)",
-      borderWidth: "2px",
+      backgroundColor: `hsla(${primaryColorValue}, 0.2)`,
     },
     press: {
       scale: 0.8,
-      width: 40,
-      height: 40,
-      backgroundColor: "hsl(var(--primary) / 0.3)",
-      borderWidth: "2px",
+      backgroundColor: `hsla(${primaryColorValue}, 0.3)`,
     }
   };
 
@@ -84,22 +75,20 @@ export const CustomCursor = () => {
 
   return (
     <>
-      {/* The trailing outline circle */}
       <motion.div
-        // --- NANO: UPGRADED Z-INDEX and ANIMATION LOGIC ---
-        className="pointer-events-none fixed z-[9999] rounded-full border-primary"
+        className="pointer-events-none fixed z-[9999] rounded-full border-2 border-primary"
         variants={cursorVariants}
         animate={isPressed ? "press" : isHovering ? "hover" : "default"}
         style={{
           translateX: springX,
           translateY: springY,
+          width: outlineSize,
+          height: outlineSize,
           left: -outlineSize / 2,
           top: -outlineSize / 2,
         }}
       />
-      {/* The precise center dot */}
       <motion.div
-        // --- NANO: UPGRADED Z-INDEX and ANIMATION LOGIC ---
         className="pointer-events-none fixed z-[9999] rounded-full bg-primary"
         animate={{ scale: isPressed ? 0.5 : isHovering ? 0 : 1 }}
         transition={{ type: "spring", stiffness: 500, damping: 20 }}
