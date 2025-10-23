@@ -1,4 +1,4 @@
-// src/context/AuthContext.tsx (Upgraded with AnimatePresence)
+// src/context/AuthContext.tsx (Corrected to fix login race condition)
 
 "use client";
 
@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { User } from '@/types';
 import apiClient, { getMe } from '@/services/api';
 import { GlobalLoader } from '@/components/layout/GlobalLoader';
-// --- NANO: IMPORTING THE ANIMATION MANAGER ---
 import { AnimatePresence } from 'framer-motion';
 
 interface AuthContextType {
@@ -57,13 +56,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userProfile = await getMe();
       setUser(userProfile);
-      router.push('/dashboard');
+      // --- NANO: CRITICAL FIX ---
+      // The router.push has been REMOVED from here. Navigation is now handled
+      // by the pages themselves, reacting to the state change.
+      // --------------------------
     } catch (error) {
       console.error("Failed to fetch user profile after login.", error);
       logout();
     } finally {
-      // A slight delay prevents a jarring flash if the login is too fast
-      setTimeout(() => setLoading(false), 300); 
+      setTimeout(() => setLoading(false), 300);
     }
   };
 
@@ -79,15 +80,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, loading }}>
-      {/* --- NANO: THE GATEKEEPER LOGIC --- */}
-      {/* AnimatePresence will now manage the exit animation of the loader */}
-      {/* when the `loading` state changes from true to false. */}
       <AnimatePresence>
         {loading && <GlobalLoader />}
       </AnimatePresence>
       
       {!loading && children}
-      {/* ---------------------------------- */}
     </AuthContext.Provider>
   );
 };

@@ -1,10 +1,11 @@
-// src/app/auth/login/page.tsx (Corrected)
+// src/app/auth/login/page.tsx (Updated with redirect logic)
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { loginUser } from "@/services/api"; // This is for the API call
+import { loginUser } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,8 +19,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // Get the 'login' function from our context. It is NOT named 'loginUser'.
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // --- NANO: REDIRECT LOGIC ---
+  // This effect runs whenever the authentication state changes.
+  useEffect(() => {
+    // If the user is successfully authenticated, navigate them to the dashboard.
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+  // ----------------------------
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +41,9 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      // Call the API function, which IS named 'loginUser'
       const token = await loginUser(email, password);
-
-      // Call the context function, which IS named 'login'
+      // Now, login only sets the state. The useEffect above will handle the redirect.
       await login(token); 
-      
     } catch (error) {
       console.error("Login failed:", error);
       if (axios.isAxiosError(error) && error.response) {
@@ -62,24 +70,15 @@ export default function LoginPage() {
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
+                  id="email" type="email" placeholder="m@example.com" required
+                  value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
+                  id="password" type="password" required 
+                  value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading}
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>

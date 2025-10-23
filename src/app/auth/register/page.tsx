@@ -1,8 +1,9 @@
-// src/app/auth/register/page.tsx (Corrected with Toast Import)
+// src/app/auth/register/page.tsx (Updated with redirect logic)
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { registerUser, loginUser, RegisterUserPayload } from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { toast } from "react-hot-toast"; // <-- THE FIX
+import { toast } from "react-hot-toast";
 import axios from "axios";
 
 export default function RegisterPage() {
@@ -26,7 +27,16 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // --- NANO: REDIRECT LOGIC ---
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+  // ----------------------------
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,11 +46,11 @@ export default function RegisterPage() {
     
     try {
       await registerUser(payload);
-      // This toast will now work correctly
       toast.success("Account created successfully!");
       
       const token = await loginUser(email, password);
-      login(token);
+      // This now only sets the state. The useEffect will handle the redirect.
+      await login(token);
       
     } catch (error) {
       console.error("Registration failed:", error);
@@ -69,48 +79,29 @@ export default function RegisterPage() {
               <div className="grid gap-2">
                 <Label htmlFor="full-name">Full Name</Label>
                 <Input 
-                  id="full-name" 
-                  placeholder="Max Robinson" 
-                  required 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isLoading}
+                  id="full-name" placeholder="Max Robinson" required 
+                  value={name} onChange={(e) => setName(e.target.value)} disabled={isLoading}
                 />
               </div>
-              
               <div className="grid gap-2">
                 <Label htmlFor="title">Your Title / Role</Label>
                 <Input 
-                  id="title" 
-                  placeholder="Senior Software Engineer" 
-                  required 
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  disabled={isLoading}
+                  id="title" placeholder="Senior Software Engineer" required 
+                  value={title} onChange={(e) => setTitle(e.target.value)} disabled={isLoading}
                 />
               </div>
-
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
+                  id="email" type="email" placeholder="m@example.com" required
+                  value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input 
-                  id="password" 
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
+                  id="password" type="password" required
+                  value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading}
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>

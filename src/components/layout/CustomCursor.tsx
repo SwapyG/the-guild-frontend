@@ -1,4 +1,4 @@
-// src/components/layout/CustomCursor.tsx (Corrected with handleMouseLeave)
+// src/components/layout/CustomCursor.tsx (Corrected with pointer-events-none)
 
 "use client";
 
@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { motion, useSpring, useMotionValue, Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// From your globals.css, --primary is '220 90% 50%'.
 const primaryColorValue = "220 90% 50%";
 
 export const CustomCursor = () => {
@@ -47,10 +48,7 @@ export const CustomCursor = () => {
       window.removeEventListener("mouseup", handleMouseUp);
       interactiveElements.forEach(el => {
         el.removeEventListener('mouseenter', handleMouseEnter);
-        // --- NANO: CORRECTIVE ACTION ---
-        // The typo 'handleLeave' has been corrected to 'handleMouseLeave'.
         el.removeEventListener('mouseleave', handleMouseLeave);
-        // --------------------------------
       });
     };
   }, [cursorX, cursorY]);
@@ -75,8 +73,13 @@ export const CustomCursor = () => {
 
   return (
     <>
+      {/* The trailing outline circle */}
       <motion.div
+        // --- NANO: CRITICAL FIX ---
+        // The 'pointer-events-none' class makes this div invisible to clicks,
+        // allowing interactions to pass through to the elements underneath.
         className="pointer-events-none fixed z-[9999] rounded-full border-2 border-primary"
+        // -------------------------
         variants={cursorVariants}
         animate={isPressed ? "press" : isHovering ? "hover" : "default"}
         style={{
@@ -88,8 +91,12 @@ export const CustomCursor = () => {
           top: -outlineSize / 2,
         }}
       />
+      {/* The precise center dot */}
       <motion.div
+        // --- NANO: CRITICAL FIX ---
+        // This must also be non-interactive.
         className="pointer-events-none fixed z-[9999] rounded-full bg-primary"
+        // -------------------------
         animate={{ scale: isPressed ? 0.5 : isHovering ? 0 : 1 }}
         transition={{ type: "spring", stiffness: 500, damping: 20 }}
         style={{
