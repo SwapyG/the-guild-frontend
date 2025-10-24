@@ -1,9 +1,12 @@
-/*  src/app/globals.css (Polished Steel + Smooth Transition) */
+/* src/app/globals.css — Polished Steel Theme + Smooth Transitions */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------
+   🎨 COLOR SYSTEM — LIGHT & DARK THEMES
+---------------------------------------------- */
 @layer base {
     :root {
         --background: 0 0% 100%;
@@ -51,15 +54,13 @@
     }
 }
 
+/* ---------------------------------------------
+   🧱 BASE ELEMENTS
+---------------------------------------------- */
 @layer base {
     html {
         scroll-behavior: smooth;
-        cursor: none;
-    }
-
-    * {
-        @apply border-border;
-        cursor: none;
+        cursor: default;
     }
 
     body {
@@ -75,9 +76,14 @@
             border-color 0.4s ease;
     }
 
-    /* Scrollbar styling */
+    * {
+        @apply border-border;
+    }
+
+    /* Custom scrollbars */
     ::-webkit-scrollbar {
         width: 8px;
+        height: 8px;
     }
 
     ::-webkit-scrollbar-track {
@@ -94,20 +100,24 @@
     }
 }
 
-/* 🌗 Smooth theme transitions */
+/* ---------------------------------------------
+   🌗 THEME TRANSITIONS
+---------------------------------------------- */
 * {
     transition-property: background-color, color, border-color, fill, stroke;
     transition-duration: 350ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Disable transitions temporarily on mount to prevent flicker */
-html[data-theme-transition='false'] *,
-html[data-theme-transition='false'] {
+/* Temporarily disable transitions on mount to prevent flicker */
+html[data-theme-transition='false'],
+html[data-theme-transition='false'] * {
     transition: none !important;
 }
 
-/* Aurora and glow effects */
+/* ---------------------------------------------
+   🌌 AURORA & GLOW ANIMATIONS
+---------------------------------------------- */
 @keyframes aurora {
     0% {
         background-position: 0% 50%;
@@ -122,29 +132,39 @@ html[data-theme-transition='false'] {
     }
 }
 
-.theme-toggle-glow:active {
-    box-shadow: 0 0 15px hsl(var(--primary) / 0.6),
-        0 0 30px hsl(var(--primary) / 0.3);
-    transition: box-shadow 0.2s ease;
-}
-
 @keyframes pulse-glow {
 
     0%,
     100% {
-        box-shadow: 0 0 15px hsl(var(--primary) / 0.25),
+        box-shadow:
+            0 0 15px hsl(var(--primary) / 0.25),
             0 0 30px hsl(var(--primary) / 0.15);
         transform: scale(1);
     }
 
     50% {
-        box-shadow: 0 0 40px hsl(var(--primary) / 0.45),
+        box-shadow:
+            0 0 40px hsl(var(--primary) / 0.45),
             0 0 80px hsl(var(--primary) / 0.3);
         transform: scale(1.03);
     }
 }
 
-/* Ripple effect for buttons */
+@keyframes glow {
+
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(1.2);
+    }
+}
+
+/* ---------------------------------------------
+   💧 RIPPLE EFFECT (buttons, cards)
+---------------------------------------------- */
 .ripple-btn {
     position: relative;
     overflow: hidden;
@@ -170,15 +190,34 @@ html[data-theme-transition='false'] {
     }
 }
 
-/* Glow animation */
-@keyframes glow {
+/* ---------------------------------------------
+   ✨ INTERACTION EFFECTS
+---------------------------------------------- */
+.theme-toggle-glow:active {
+    box-shadow:
+        0 0 15px hsl(var(--primary) / 0.6),
+        0 0 30px hsl(var(--primary) / 0.3);
+    transition: box-shadow 0.2s ease;
+}
 
-    0%,
-    100% {
-        filter: brightness(1);
+/* ---------------------------------------------
+   ♿️ ACCESSIBILITY
+---------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
     }
+}
 
-    50% {
-        filter: brightness(1.2);
-    }
+/* ---------------------------------------------
+   🖱️ OPTIONAL CUSTOM CURSOR AREA
+   (safe alternative to global cursor:none)
+---------------------------------------------- */
+.cursor-zone {
+    cursor: none;
+}
+
+.cursor-zone * {
+    cursor: none;
 }

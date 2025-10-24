@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
-import type { Container, Engine, IOptions, RecursivePartial } from "@tsparticles/engine";
+import type { Engine, IOptions, RecursivePartial } from "@tsparticles/engine";
 import { loadFull } from "tsparticles";
 import { useTheme } from "next-themes";
 
@@ -10,19 +10,17 @@ export const AnimatedBackground = () => {
   const [engineReady, setEngineReady] = useState(false);
   const { resolvedTheme } = useTheme();
   const parallaxRef = useRef<HTMLDivElement>(null);
-  const glassRef = useRef<HTMLDivElement>(null);
-  const tintRef = useRef<HTMLDivElement>(null);
 
-  // Initialize tsparticles
+  // ✅ Initialize tsparticles
   useEffect(() => {
     initParticlesEngine(async (engine: Engine) => {
       await loadFull(engine);
     }).then(() => setEngineReady(true));
   }, []);
 
-  // Parallax movement
+  // ✅ Parallax gradient
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const move = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
       const x = (e.clientX / innerWidth - 0.5) * 10;
       const y = (e.clientY / innerHeight - 0.5) * 10;
@@ -30,126 +28,128 @@ export const AnimatedBackground = () => {
         parallaxRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       }
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
   }, []);
-
-  // Glass tilt + brightness based on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || 0;
-      const tilt = Math.min(scrollY / 200, 1); // glass tilt
-      const brightness = 1 + Math.min(scrollY / 1000, 0.15); // glass brightness
-      if (glassRef.current) {
-        glassRef.current.style.transform = `rotateX(${tilt * 3}deg) translateY(${tilt * -4}px)`;
-        glassRef.current.style.filter = `brightness(${brightness})`;
-      }
-      if (tintRef.current) {
-        tintRef.current.style.opacity = `${0.7 - tilt * 0.2}`; // fade tint as you scroll
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const particlesLoaded = async (_?: Container): Promise<void> => {};
 
   const options: RecursivePartial<IOptions> = useMemo(() => {
     const isDark = resolvedTheme === "dark";
+
     return {
       fullScreen: { enable: false },
-      detectRetina: true,
       fpsLimit: 120,
+      detectRetina: true,
       background: { color: { value: "transparent" } },
       interactivity: {
-        detectsOn: "canvas",
+        detectsOn: "window", // ✅ ensures interaction even when canvas is behind UI
         events: {
-          onHover: { enable: true, mode: ["grab", "repulse"] },
-          onClick: { enable: true, mode: "push" },
+          onHover: {
+            enable: true,
+            mode: ["grab", "repulse", "bubble"],
+            parallax: { enable: true, force: 60, smooth: 12 },
+          },
+          onClick: {
+            enable: true,
+            mode: ["push", "repulse", "connect"],
+          },
           resize: { enable: true },
         },
         modes: {
-          grab: { distance: 180, links: { opacity: 0.4 } },
-          repulse: { distance: 120, duration: 0.3 },
+          grab: { distance: 220, links: { opacity: 0.7 } },
+          repulse: { distance: 150, duration: 0.5, speed: 1 },
+          bubble: {
+            distance: 200,
+            size: 8,
+            duration: 2,
+            opacity: 0.9,
+            color: { value: isDark ? "#60a5fa" : "#2563eb" },
+          },
           push: { quantity: 3 },
+          connect: { distance: 120, radius: 180, links: { opacity: 0.6 } },
         },
       },
       particles: {
-        number: { value: 80, density: { enable: true, area: 900 } },
+        number: { value: 100, density: { enable: true, area: 900 } },
         color: {
           value: isDark
-            ? ["#ffffff", "#00BFFF", "#8A2BE2"]
-            : ["#1d4ed8", "#0284c7", "#4338ca"],
+            ? ["#ffffff", "#38bdf8", "#a78bfa"]
+            : ["#2563eb", "#0ea5e9", "#6366f1"],
         },
         links: {
           enable: true,
-          color: isDark ? "#a5b4ff" : "#1e3a8a",
-          distance: 150,
-          opacity: isDark ? 0.35 : 0.65,
-          width: 1.2,
+          distance: 140,
+          color: isDark ? "#818cf8" : "#1e3a8a",
+          opacity: isDark ? 0.25 : 0.55,
+          width: 1.1,
         },
         move: {
           enable: true,
-          speed: isDark ? 0.8 : 0.55,
-          random: true,
+          speed: 0.6,
+          random: false,
+          straight: false,
+          direction: "none",
           outModes: { default: "out" },
+          attract: { enable: true, rotateX: 600, rotateY: 1200 },
         },
         opacity: {
-          value: isDark ? { min: 0.25, max: 0.6 } : { min: 0.5, max: 0.85 },
-          animation: { enable: true, speed: 0.5, sync: false },
+          value: { min: 0.3, max: 0.6 },
+          animation: { enable: true, speed: 0.4, sync: false },
         },
         size: {
-          value: { min: 1.5, max: isDark ? 3 : 3.5 },
-          animation: { enable: true, speed: 2, minimumValue: 0.4, sync: false },
-        },
-        shadow: {
-          enable: !isDark,
-          color: "#1e3a8a",
-          blur: 4,
+          value: { min: 1, max: 3.5 },
+          animation: { enable: true, speed: 2, minimumValue: 0.4 },
         },
       },
     } as RecursivePartial<IOptions>;
   }, [resolvedTheme]);
 
   if (!engineReady) return null;
-
   const isDark = resolvedTheme === "dark";
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden transition-colors duration-700">
-      {/* BACKGROUND ORBS (Parallax) */}
+      {/* 🌌 Parallax Gradient */}
       <div
         ref={parallaxRef}
         className={`absolute inset-0 blur-3xl transition-transform duration-100 ease-linear ${
           isDark
             ? "bg-[radial-gradient(ellipse_at_top_left,_#1e3a8a_0%,_transparent_60%),radial-gradient(ellipse_at_bottom_right,_#00bcd4_0%,_transparent_70%)] opacity-25"
-            : "bg-[radial-gradient(ellipse_at_top_left,_#93c5fd_0%,_transparent_60%),radial-gradient(ellipse_at_bottom_right,_#a5b4fc_0%,_transparent_70%)] opacity-60"
+            : "bg-[radial-gradient(ellipse_at_top_left,_#93c5fd_0%,_transparent_60%),radial-gradient(ellipse_at_bottom_right,_#a5b4fc_0%,_transparent_70%)] opacity-55"
         }`}
       />
 
-      {/* PARTICLES */}
-      <Particles id="tsparticles" key={resolvedTheme} particlesLoaded={particlesLoaded} options={options} />
+      {/* ✨ Interactive Particles */}
+      <Particles id="tsparticles" options={options} />
 
-      {/* GLASS OVERLAY (Scroll + Brightness) */}
+      {/* 🧊 Frosted Glass Layer */}
       <div
-        ref={glassRef}
-        className={`absolute inset-0 pointer-events-none backdrop-blur-md transition-transform duration-300 ease-out ${
+        className={`absolute inset-0 backdrop-blur-[6px] border-t border-white/10 transition-all duration-700 ${
           isDark
-            ? "bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.6)_100%)] border-t border-white/10"
+            ? "bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.04)_0%,rgba(0,0,0,0.5)_100%)]"
             : "bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.5)_0%,rgba(255,255,255,0.2)_100%)]"
         }`}
       />
 
-      {/* LIGHT / DARK TINT LAYER (fades on scroll) */}
+      {/* 💫 Soft shimmer overlay */}
       <div
-        ref={tintRef}
-        className={`absolute inset-0 pointer-events-none mix-blend-soft-light transition-opacity duration-700 ${
-          isDark
-            ? "bg-gradient-to-b from-indigo-900/40 via-transparent to-black/70"
-            : "bg-gradient-to-br from-blue-50/50 via-white/80 to-sky-100/50"
-        }`}
+        className="absolute inset-0 pointer-events-none opacity-30 mix-blend-overlay animate-[shimmer_6s_infinite_linear]"
+        style={{
+          background:
+            "linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
+          backgroundSize: "200% 200%",
+        }}
       />
+
+      <style jsx global>{`
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };

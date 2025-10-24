@@ -1,31 +1,18 @@
+// src/components/providers/ThemeProvider.tsx
 "use client";
-
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-/**
- * Custom ThemeProvider with smooth theme transitions
- * and hydration-safe flicker prevention.
- */
-export function ThemeProvider({
-  children,
-  ...props
-}: React.ComponentProps<typeof NextThemesProvider>) {
-  // Disable transitions during SSR to prevent flash/flicker
-  React.useEffect(() => {
-    document.documentElement.dataset.themeTransition = "false";
-    const timeout = setTimeout(() => {
-      document.documentElement.dataset.themeTransition = "true";
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, []);
+type ThemeProviderProps = React.ComponentProps<typeof NextThemesProvider>;
 
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
     <NextThemesProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
-      disableTransitionOnChange
+      enableColorScheme
+      themes={["light","dark"]}
       {...props}
     >
       {children}
