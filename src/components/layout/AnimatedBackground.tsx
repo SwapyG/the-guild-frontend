@@ -13,21 +13,21 @@ export const AnimatedBackground = () => {
   const parallaxRef = useRef<HTMLDivElement>(null);
   const haloRef = useRef<HTMLDivElement>(null);
 
-  // Initialize engine
+  // Initialize tsparticles
   useEffect(() => {
     initParticlesEngine(async (engine: Engine) => {
       await loadFull(engine);
     }).then(() => setEngineReady(true));
   }, []);
 
-  // Detect device performance once
+  // Adjust particle density based on device
   useEffect(() => {
     const cores = navigator.hardwareConcurrency || 4;
     const lowPerf = cores <= 4 || window.innerWidth < 1024;
     setParticleCount(lowPerf ? 80 : 150);
   }, []);
 
-  // Cursor tracking + spotlight
+  // Mouse movement — parallax and spotlight effect
   useEffect(() => {
     const handleMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
@@ -45,12 +45,11 @@ export const AnimatedBackground = () => {
               rgba(99,102,241,0.2) 25%,
               transparent 60%)`
           : `radial-gradient(circle at ${e.clientX}px ${e.clientY}px,
-              rgba(37,99,235,0.3),
-              rgba(59,130,246,0.15) 25%,
+              rgba(59,130,246,0.25),
+              rgba(191,219,254,0.15) 25%,
               transparent 60%)`;
       }
     };
-
     window.addEventListener("mousemove", handleMove);
     return () => window.removeEventListener("mousemove", handleMove);
   }, []);
@@ -86,13 +85,13 @@ export const AnimatedBackground = () => {
         color: {
           value: isDark
             ? ["#ffffff", "#93c5fd", "#c084fc"]
-            : ["#2563eb", "#3b82f6", "#60a5fa", "#1d4ed8"],
+            : ["#1d4ed8", "#3b82f6", "#60a5fa"],
         },
         links: {
           enable: true,
           distance: 130,
           color: isDark ? "#93c5fd" : "#1e3a8a",
-          opacity: isDark ? 0.35 : 0.45,
+          opacity: isDark ? 0.35 : 0.5,
           width: 1.1,
         },
         move: {
@@ -126,29 +125,36 @@ export const AnimatedBackground = () => {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Subtle ambient gradient */}
+      {/* 🎨 Ambient Background with Parallax */}
       <div
         ref={parallaxRef}
         className={`absolute inset-0 transition-transform duration-100 ease-linear ${
           isDark
             ? "bg-[radial-gradient(circle_at_center,_#0f172a_0%,_transparent_80%)]"
-            : "bg-[radial-gradient(circle_at_center,_#e0f2fe_0%,_transparent_80%)]"
+            : "bg-[radial-gradient(circle_at_center,_#dbeafe_0%,_#bfdbfe_40%,_transparent_90%)]"
         }`}
       />
 
-      {/* Particle Layer */}
+      {/* ✨ Particle Layer */}
       <Particles id="tsparticles" options={options} />
 
-      {/* Frosted Layer (lighter tint) */}
+      {/* 🌫️ Frosted Glass Layer */}
       <div
         className={`absolute inset-0 backdrop-blur-[4px] transition-all duration-700 ${
-          isDark
-            ? "bg-[rgba(0,0,0,0.25)]"
-            : "bg-[rgba(255,255,255,0.4)]"
+          isDark ? "bg-[rgba(0,0,0,0.25)]" : "bg-[rgba(255,255,255,0.25)]"
         }`}
       />
 
-      {/* Halo */}
+      {/* 💡 Adaptive Vignette for Depth */}
+      <div
+        className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${
+          isDark
+            ? "bg-[radial-gradient(circle_at_center,transparent_60%,rgba(0,0,0,0.8)_100%)] opacity-70"
+            : "bg-[radial-gradient(circle_at_center,transparent_60%,rgba(0,0,0,0.1)_100%)] opacity-90"
+        }`}
+      />
+
+      {/* 🔵 Halo Spotlight */}
       <div
         ref={haloRef}
         className="absolute inset-0 pointer-events-none mix-blend-screen animate-pulse-halo"

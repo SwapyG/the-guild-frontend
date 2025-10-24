@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import {
@@ -17,13 +18,17 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SkillManager } from "@/components/profile/SkillManager";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const router = useRouter();
   const isDark = theme === "dark";
+  const [ripple, setRipple] = useState<{ x: number; y: number } | null>(null);
 
   if (!user) {
     return (
@@ -38,6 +43,18 @@ export default function ProfilePage() {
   const accentGlow = isDark
     ? "rgba(147,197,253,0.25)"
     : "rgba(37,99,235,0.15)";
+
+  const handleBackClick = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setRipple({ x, y });
+
+    setTimeout(() => {
+      setRipple(null);
+      router.push("/mission-command");
+    }, 500);
+  };
 
   return (
     <ProtectedRoute>
@@ -58,9 +75,46 @@ export default function ProfilePage() {
         />
 
         {/* Content Layer */}
-        <div className="relative z-10 container mx-auto max-w-4xl">
+        <div className="relative z-10 container mx-auto max-w-4xl space-y-8">
+          {/* 🔙 Back Button */}
+          <motion.button
+            onClick={handleBackClick}
+            className="relative overflow-hidden inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 backdrop-blur-md bg-card/40 text-sm text-foreground/80 shadow-sm hover:shadow-lg hover:bg-primary/10 hover:text-primary transition-all cursor-pointer w-fit"
+            whileHover={{ scale: 1.05, boxShadow: `0 0 15px ${accentGlow}` }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Mission Command</span>
+
+            {/* ⚡ Ripple effect */}
+            <AnimatePresence>
+              {ripple && (
+                <motion.span
+                  key="ripple"
+                  initial={{ scale: 0, opacity: 0.8 }}
+                  animate={{ scale: 8, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  style={{
+                    position: "absolute",
+                    top: ripple.y,
+                    left: ripple.x,
+                    width: 20,
+                    height: 20,
+                    background: isDark
+                      ? "radial-gradient(circle, rgba(147,197,253,0.4), transparent 70%)"
+                      : "radial-gradient(circle, rgba(59,130,246,0.3), transparent 70%)",
+                    borderRadius: "50%",
+                    pointerEvents: "none",
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              )}
+            </AnimatePresence>
+          </motion.button>
+
+          {/* === User Header Section === */}
           <FadeIn>
-            {/* === User Header Section === */}
             <motion.div
               className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-card/40 backdrop-blur-md border border-border/60 rounded-2xl p-6 shadow-md"
               whileHover={{

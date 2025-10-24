@@ -1,52 +1,194 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Mission, MissionStatus } from "@/types";
 import { getMissions, updateMissionStatus } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { CreateMissionModal } from "@/components/missions/CreateMissionModal";
 import { useAuth } from "@/context/AuthContext";
-import { ClipboardList, Activity, CheckCircle2, Sparkles } from "lucide-react";
+import {
+  ClipboardList,
+  Activity,
+  CheckCircle2,
+  Sparkles,
+  GripVertical,
+} from "lucide-react";
+
 import {
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  closestCorners,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
   SortableContext,
   verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 import { MissionColumn } from "@/components/missions/MissionColumn";
-import { SortableMissionCard } from "@/components/missions/SortableMissionCard";
 import { toast } from "react-hot-toast";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
-const MissionCardOverlay = ({ mission }: { mission: Mission }) => (
-  <Card className="bg-card border-primary/50 shadow-lg backdrop-blur-md">
-    <CardHeader>
-      <CardTitle className="text-lg tracking-tight">{mission.title}</CardTitle>
-    </CardHeader>
-    <CardContent className="text-sm text-muted-foreground">
-      <p>Lead: {mission.lead.name}</p>
-    </CardContent>
-    <CardFooter className="text-xs text-muted-foreground">
-      <p>{mission.roles.length} role(s) defined</p>
-    </CardFooter>
-  </Card>
-);
+/* ───────────────────────────────────────────── */
+/* SortableExpandableMissionCard                 */
+/* ───────────────────────────────────────────── */
+function SortableExpandableMissionCard({
+  mission,
+  expanded,
+  onToggle,
+}: {
+  mission: Mission;
+  expanded: boolean;
+  onToggle: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: mission.id });
 
-const statusConfig: Record<MissionStatus, { title: string; icon: React.ReactNode }> = {
-  Proposed: { title: "Proposed", icon: <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" /> },
-  Active: { title: "Active", icon: <Activity className="h-5 w-5 mr-2 text-sky-500" /> },
-  Completed: { title: "Completed", icon: <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" /> },
-};
+  const { theme } = useTheme();
+  const router = useRouter();
+  const isDark = theme === "dark";
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  } as React.CSSProperties;
+
+  const glowColor = isDark
+    ? "rgba(147,197,253,0.25)"
+    : "rgba(37,99,235,0.15)";
+
+  const handleClick = () => {
+    if (!isDragging) {
+      router.push(`/missions/${mission.id}`);
+    }
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative rounded-xl border border-border/50 bg-card/60 backdrop-blur-sm select-none",
+        isDragging
+          ? "shadow-[0_0_20px_rgba(59,130,246,0.4)] z-[50]"
+          : "hover:shadow-[0_0_14px_rgba(59,130,246,0.25)] transition-all cursor-pointer"
+      )}
+      onClick={handleClick}
+    >
+      <div className="p-3 md:p-4">
+        <div className="flex items-start gap-2">
+          {/* Drag Handle */}
+          <button
+            {...attributes}
+            {...listeners}
+            className={cn(
+              "mt-0.5 shrink-0 rounded-md border border-border/60 bg-background/50",
+              "p-1.5 text-muted-foreground hover:text-foreground cursor-grab"
+            )}
+            aria-label="Drag"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+
+          {/* Card Header */}
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm md:text-base leading-tight text-foreground">
+              {mission.title}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Lead: {mission.lead.name}
+            </p>
+          </div>
+        </div>
+
+        {/* Expanded Info (visible on hover or when active) */}
+        <AnimatePresence initial={false}>
+          {expanded && !isDragging && (
+            <motion.div
+              key="expanded"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mt-3 space-y-3 text-sm text-muted-foreground"
+            >
+              <p>
+                <span className="font-semibold text-foreground/90">Status:</span>{" "}
+                {mission.status}
+              </p>
+              <p>
+                <span className="font-semibold text-foreground/90">Roles:</span>{" "}
+                {mission.roles.length} defined
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {mission.roles.slice(0, 3).map((r) => (
+                  <span
+                    key={r.id}
+                    className="text-xs px-2 py-1 rounded-md bg-primary/10 border border-primary/20"
+                  >
+                    {r.role_description}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Animated Glow */}
+      <motion.div
+        className="pointer-events-none absolute inset-0 rounded-xl"
+        style={{
+          background: `radial-gradient(circle at 30% 70%, ${glowColor}, transparent 70%)`,
+        }}
+        animate={{ opacity: [0.15, 0.3, 0.15] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </motion.div>
+  );
+}
+
+/* ───────────────────────────────────────────── */
+/* Status Icons                                  */
+/* ───────────────────────────────────────────── */
+const statusConfig: Record<MissionStatus, { title: string; icon: React.ReactNode }> =
+  {
+    Proposed: {
+      title: "Proposed",
+      icon: (
+        <ClipboardList className="h-5 w-5 mr-2 text-muted-foreground" />
+      ),
+    },
+    Active: {
+      title: "Active",
+      icon: <Activity className="h-5 w-5 mr-2 text-sky-500" />,
+    },
+    Completed: {
+      title: "Completed",
+      icon: <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />,
+    },
+  };
+
+/* ───────────────────────────────────────────── */
+/* Page Component                                */
+/* ───────────────────────────────────────────── */
 export default function MissionCommandPage() {
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -58,8 +200,12 @@ export default function MissionCommandPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeMission, setActiveMission] = useState<Mission | null>(null);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
-  // === Fetch Missions ===
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+
   const fetchMissions = useCallback(async () => {
     setLoading(true);
     try {
@@ -78,7 +224,9 @@ export default function MissionCommandPage() {
     if (user) fetchMissions();
   }, [fetchMissions, user]);
 
-  // === DnD Handlers ===
+  const handleExpandToggle = (id: string) =>
+    setExpandedCardId((prev) => (prev === id ? null : id));
+
   const handleDragStart = (event: DragStartEvent) => {
     const mission = missions.find((m) => m.id === event.active.id);
     if (mission) setActiveMission(mission);
@@ -87,12 +235,16 @@ export default function MissionCommandPage() {
   const handleDragEnd = async (event: DragEndEvent) => {
     setActiveMission(null);
     const { active, over } = event;
-    if (!over || !over.id || active.id === over.id) return;
+    if (!over) return;
 
     const missionId = active.id as string;
-    const newStatus = over.id as MissionStatus;
+    const sortableData: any = over.data?.current?.sortable;
+    const targetColumn = sortableData?.containerId || (over.id as MissionStatus);
+
+    if (!targetColumn) return;
+
     const missionToMove = missions.find((m) => m.id === missionId);
-    if (!missionToMove || missionToMove.status === newStatus) return;
+    if (!missionToMove || missionToMove.status === targetColumn) return;
 
     if (user?.id !== missionToMove.lead_user_id) {
       toast.error("Only the mission lead can change the status.");
@@ -101,11 +253,13 @@ export default function MissionCommandPage() {
 
     const original = [...missions];
     setMissions((prev) =>
-      prev.map((m) => (m.id === missionId ? { ...m, status: newStatus } : m))
+      prev.map((m) =>
+        m.id === missionId ? { ...m, status: targetColumn! } : m
+      )
     );
 
     try {
-      await updateMissionStatus(missionId, newStatus);
+      await updateMissionStatus(missionId, targetColumn);
       toast.success("Mission status updated!");
     } catch (err) {
       console.error(err);
@@ -114,163 +268,130 @@ export default function MissionCommandPage() {
     }
   };
 
-  // === Filter & Group ===
-  const displayedMissions = isCommander
-    ? missions
-    : missions.filter(
-        (m) =>
-          m.status === "Proposed" ||
-          (m.status === "Active" &&
-            m.roles.some((r) => r.assignee?.id === user?.id))
-      );
+  const displayedMissions = useMemo(
+    () =>
+      isCommander
+        ? missions
+        : missions.filter(
+            (m) =>
+              m.status === "Proposed" ||
+              (m.status === "Active" &&
+                m.roles.some((r) => r.assignee?.id === user?.id))
+          ),
+    [missions, isCommander, user?.id]
+  );
 
   const missionsByStatus = displayedMissions.reduce(
     (acc, m) => {
-      if (!acc[m.status]) acc[m.status] = [];
-      acc[m.status].push(m);
+      (acc[m.status] ||= []).push(m);
       return acc;
     },
     {} as Record<MissionStatus, Mission[]>
   );
 
-  const commanderGlow = isDark
-    ? "rgba(147,197,253,0.2)"
-    : "rgba(59,130,246,0.2)";
-  const operativeGlow = isDark
-    ? "rgba(251,191,36,0.25)"
-    : "rgba(234,179,8,0.2)";
-
   return (
     <main className="relative min-h-screen overflow-hidden p-4 md:p-8">
-      {/* 🌌 Animated Background */}
-      <motion.div
-        className="absolute inset-0 z-0"
-        animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        style={{
-          backgroundImage: isDark
-            ? "radial-gradient(700px circle at 0% 0%, rgba(59,130,246,0.15), transparent 60%), radial-gradient(700px circle at 100% 100%, rgba(147,197,253,0.15), transparent 60%)"
-            : "radial-gradient(700px circle at 0% 0%, rgba(234,179,8,0.1), transparent 60%), radial-gradient(700px circle at 100% 100%, rgba(37,99,235,0.1), transparent 60%)",
-          backgroundSize: "200% 200%",
-        }}
-      />
+      <FadeIn>
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-primary/80 animate-pulse" />
+            <h1 className="text-3xl font-bold tracking-tight">
+              Mission Command
+            </h1>
+          </div>
 
-      {/* === Foreground === */}
-      <div className="relative z-10">
-        <FadeIn>
-          <div className="flex justify-between items-center mb-10">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary/80 animate-pulse" />
-              <h1 className="text-3xl font-bold tracking-tight">
-                Mission Command
-              </h1>
-            </div>
+          {isCommander && (
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              Propose New Mission
+            </Button>
+          )}
+        </div>
+      </FadeIn>
 
-            {isCommander && (
-              <Button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="shadow-md hover:shadow-primary/30"
-              >
-                Propose New Mission
-              </Button>
+      {loading ? (
+        <p className="text-center text-muted-foreground py-16">
+          Loading missions...
+        </p>
+      ) : error ? (
+        <p className="text-center text-red-500 py-16">{error}</p>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          collisionDetection={closestCenter}
+          modifiers={[snapCenterToCursor]}
+        >
+          <div
+            className={cn(
+              "grid gap-4 md:gap-6",
+              isCommander ? "md:grid-cols-3" : "md:grid-cols-2"
+            )}
+          >
+            {(["Proposed", "Active", "Completed"] as MissionStatus[]).map(
+              (status) => {
+                if (!isCommander && status === "Completed") return null;
+                const list = missionsByStatus[status] || [];
+
+                return (
+                  <MissionColumn key={status} status={status}>
+                    <motion.div
+                      className="rounded-2xl p-4 border border-border/50 bg-card/40 backdrop-blur-sm"
+                      whileHover={{
+                        boxShadow: "0 0 18px rgba(59,130,246,0.15)",
+                      }}
+                    >
+                      <div className="flex items-center mb-4 px-2">
+                        {statusConfig[status].icon}
+                        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                          {statusConfig[status].title}
+                        </h2>
+                      </div>
+
+                      {/* Independent Scrollable Column */}
+                      <SortableContext
+                        id={status}
+                        items={list.map((m) => m.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div
+                          className="space-y-3 overflow-y-auto pr-2"
+                          style={{ maxHeight: "calc(100vh - 280px)" }}
+                        >
+                          <AnimatePresence>
+                            {list.length > 0 ? (
+                              list.map((m) => (
+                                <SortableExpandableMissionCard
+                                  key={m.id}
+                                  mission={m}
+                                  expanded={expandedCardId === m.id}
+                                  onToggle={handleExpandToggle}
+                                />
+                              ))
+                            ) : (
+                              <div className="text-center text-sm text-muted-foreground py-8 border-2 border-dashed rounded-lg">
+                                No missions here.
+                              </div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </SortableContext>
+                    </motion.div>
+                  </MissionColumn>
+                );
+              }
             )}
           </div>
-        </FadeIn>
 
-        <FadeIn delay={0.25}>
-          {loading ? (
-            <p className="text-center text-muted-foreground py-16">
-              Loading missions...
-            </p>
-          ) : error ? (
-            <p className="text-center text-red-500 py-16">{error}</p>
-          ) : (
-            <DndContext
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              collisionDetection={closestCorners}
-            >
-              <div
-                className={cn(
-                  "grid gap-6",
-                  isCommander ? "md:grid-cols-3" : "md:grid-cols-2"
-                )}
-              >
-                {(["Proposed", "Active", "Completed"] as MissionStatus[]).map(
-                  (status) => {
-                    if (!isCommander && status === "Completed") return null;
-
-                    return (
-                      <MissionColumn key={status} status={status}>
-                        <motion.div
-                          whileHover={{
-                            scale: 1.01,
-                            boxShadow: `0 0 25px ${
-                              isCommander ? commanderGlow : operativeGlow
-                            }`,
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 220,
-                            damping: 25,
-                          }}
-                          className="rounded-2xl p-4 border border-border/50 bg-card/40 backdrop-blur-sm"
-                        >
-                          <div className="flex items-center mb-6 px-2">
-                            {statusConfig[status].icon}
-                            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                              {statusConfig[status].title}
-                            </h2>
-                          </div>
-
-                          <SortableContext
-                            items={(missionsByStatus[status] || []).map(
-                              (m) => m.id
-                            )}
-                            strategy={verticalListSortingStrategy}
-                          >
-                            <AnimatePresence>
-                              <div className="space-y-4 min-h-[220px]">
-                                {(missionsByStatus[status] || []).length > 0 ? (
-                                  missionsByStatus[status].map((m) => (
-                                    <motion.div
-                                      key={m.id}
-                                      initial={{ opacity: 0, y: 20 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      exit={{ opacity: 0, scale: 0.9 }}
-                                      transition={{
-                                        type: "spring",
-                                        stiffness: 250,
-                                        damping: 22,
-                                      }}
-                                    >
-                                      <SortableMissionCard mission={m} />
-                                    </motion.div>
-                                  ))
-                                ) : (
-                                  <div className="text-center text-sm text-muted-foreground py-8 border-2 border-dashed border-border rounded-lg">
-                                    No missions here.
-                                  </div>
-                                )}
-                              </div>
-                            </AnimatePresence>
-                          </SortableContext>
-                        </motion.div>
-                      </MissionColumn>
-                    );
-                  }
-                )}
-              </div>
-
-              <DragOverlay>
-                {activeMission ? (
-                  <MissionCardOverlay mission={activeMission} />
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-          )}
-        </FadeIn>
-      </div>
+          <DragOverlay>
+            {activeMission ? (
+              <motion.div className="p-4 rounded-xl bg-card/90 shadow-lg">
+                {activeMission.title}
+              </motion.div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      )}
 
       <CreateMissionModal
         isOpen={isCreateModalOpen}

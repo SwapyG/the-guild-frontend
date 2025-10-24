@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Inbox, CheckCircle2 } from "lucide-react";
+import { Inbox, CheckCircle2, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
@@ -25,15 +25,22 @@ export const AwaitingCommandWidget = () => {
   const isDark = theme === "dark";
 
   useEffect(() => {
-    getActionItems()
-      .then((data) => setActionItems(data))
-      .catch(() => toast.error("Failed to load action items."))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        const data = await getActionItems();
+        setActionItems(data);
+      } catch {
+        toast.error("Failed to load action items.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const glowColor = isDark
     ? "rgba(147,197,253,0.25)"
-    : "rgba(59,130,246,0.2)";
+    : "rgba(59,130,246,0.15)";
 
   return (
     <motion.div
@@ -42,40 +49,54 @@ export const AwaitingCommandWidget = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      {/* Background glow layer */}
+      {/* Subtle Ambient Glow */}
       <motion.div
-        className="absolute inset-0 rounded-2xl blur-2xl"
+        className="absolute inset-0 rounded-2xl blur-3xl"
         style={{
-          background: `radial-gradient(circle at 30% 70%, ${glowColor}, transparent 70%)`,
+          background: `radial-gradient(circle at 45% 65%, ${glowColor}, transparent 70%)`,
         }}
-        animate={{ opacity: [0.2, 0.4, 0.2] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ opacity: [0.15, 0.3, 0.15] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Main content */}
-      <Card className="relative border border-border/70 bg-card/60 backdrop-blur-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+      {/* Card Container */}
+      <Card className="relative border border-border/60 bg-card/70 backdrop-blur-lg shadow-[0_0_25px_rgba(59,130,246,0.08)] hover:shadow-[0_0_30px_rgba(59,130,246,0.12)] transition-all duration-500 rounded-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-tight">
             <Inbox className="h-5 w-5 text-primary" />
             <span>Awaiting Command</span>
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Decisions pending your review.
+          <CardDescription className="text-muted-foreground text-sm">
+            Missions or pitches pending your review.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <ScrollArea className="h-64">
-            <div className="space-y-4 pr-4">
-              {loading ? (
-                <p className="text-sm text-muted-foreground p-4">
-                  Loading action items...
-                </p>
-              ) : actionItems.length > 0 ? (
-                actionItems.map((mission, i) => {
-                  const pendingPitches = mission.pitches.filter(
+          <ScrollArea className="h-72 pr-2">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                <Loader2 className="h-6 w-6 mb-2 animate-spin" />
+                <p className="text-sm">Loading action items...</p>
+              </div>
+            ) : actionItems.length > 0 ? (
+              <div className="space-y-3">
+                {actionItems.map((mission, i) => {
+                  const pendingPitches = mission.pitches?.filter(
                     (p) => p.status === "Submitted"
                   ).length;
+
+                  const label =
+                    pendingPitches === 0
+                      ? "No Pitches"
+                      : pendingPitches === 1
+                      ? "1 Pending"
+                      : `${pendingPitches} Pending`;
+
+                  const badgeTone =
+                    pendingPitches > 0
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "bg-green-100 text-green-600 border border-green-300 dark:bg-green-900/20 dark:text-green-400";
+
                   return (
                     <motion.div
                       key={mission.id}
@@ -85,38 +106,50 @@ export const AwaitingCommandWidget = () => {
                     >
                       <Link
                         href={`/missions/${mission.id}`}
-                        className="block rounded-lg border bg-secondary/40 p-4 backdrop-blur-md transition-all hover:scale-[1.02] hover:border-primary/40 hover:bg-primary/10"
+                        className="group block relative rounded-xl border border-border/50 bg-background/30 hover:bg-primary/5 transition-all duration-300 backdrop-blur-sm p-4"
                       >
-                        <div className="flex justify-between items-start">
-                          <p className="font-medium text-foreground pr-2">
-                            {mission.title}
-                          </p>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium text-foreground group-hover:text-primary transition-colors duration-300">
+                              {mission.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Lead: {mission.lead.name}
+                            </p>
+                          </div>
                           <Badge
                             variant="secondary"
-                            className="text-xs font-semibold"
+                            className={`text-xs font-semibold ${badgeTone} transition-colors duration-300`}
                           >
-                            {pendingPitches} New Pitch
-                            {pendingPitches !== 1 ? "es" : ""}
+                            {label}
                           </Badge>
                         </div>
+
+                        {/* Animated Glow Line */}
+                        <motion.div
+                          className="absolute bottom-0 left-0 w-0 h-[2px] bg-primary/60 group-hover:w-full rounded-full"
+                          transition={{ duration: 0.4 }}
+                        />
                       </Link>
                     </motion.div>
                   );
-                })
-              ) : (
-                <motion.div
-                  className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground"
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <CheckCircle2 className="h-10 w-10 mb-3 text-green-500/80" />
-                  <p className="font-semibold">All Clear, Commander.</p>
-                  <p className="text-sm">
-                    No pending missions at this time.
-                  </p>
-                </motion.div>
-              )}
-            </div>
+                })}
+              </div>
+            ) : (
+              <motion.div
+                className="flex flex-col items-center justify-center h-56 text-center text-muted-foreground"
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 2.5, repeat: Infinity }}
+              >
+                <CheckCircle2 className="h-10 w-10 mb-3 text-green-500/80" />
+                <p className="font-semibold text-foreground/90">
+                  All Clear, Commander.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  No pending missions at this time.
+                </p>
+              </motion.div>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>
