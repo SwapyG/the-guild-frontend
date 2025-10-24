@@ -8,146 +8,169 @@ import { useTheme } from "next-themes";
 
 export const AnimatedBackground = () => {
   const [engineReady, setEngineReady] = useState(false);
+  const [particleCount, setParticleCount] = useState(130);
   const { resolvedTheme } = useTheme();
   const parallaxRef = useRef<HTMLDivElement>(null);
+  const haloRef = useRef<HTMLDivElement>(null);
 
-  // ✅ Initialize tsparticles
+  // Initialize engine
   useEffect(() => {
     initParticlesEngine(async (engine: Engine) => {
       await loadFull(engine);
     }).then(() => setEngineReady(true));
   }, []);
 
-  // ✅ Parallax gradient
+  // Detect device performance once
   useEffect(() => {
-    const move = (e: MouseEvent) => {
+    const cores = navigator.hardwareConcurrency || 4;
+    const lowPerf = cores <= 4 || window.innerWidth < 1024;
+    setParticleCount(lowPerf ? 80 : 150);
+  }, []);
+
+  // Cursor tracking + spotlight
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
       const x = (e.clientX / innerWidth - 0.5) * 10;
       const y = (e.clientY / innerHeight - 0.5) * 10;
-      if (parallaxRef.current) {
+
+      if (parallaxRef.current)
         parallaxRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+
+      if (haloRef.current) {
+        const isDark = document.documentElement.classList.contains("dark");
+        haloRef.current.style.background = isDark
+          ? `radial-gradient(circle at ${e.clientX}px ${e.clientY}px,
+              rgba(147,197,253,0.4),
+              rgba(99,102,241,0.2) 25%,
+              transparent 60%)`
+          : `radial-gradient(circle at ${e.clientX}px ${e.clientY}px,
+              rgba(37,99,235,0.3),
+              rgba(59,130,246,0.15) 25%,
+              transparent 60%)`;
       }
     };
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
+
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
   }, []);
 
+  // Particle settings
   const options: RecursivePartial<IOptions> = useMemo(() => {
     const isDark = resolvedTheme === "dark";
-
     return {
       fullScreen: { enable: false },
       fpsLimit: 120,
       detectRetina: true,
       background: { color: { value: "transparent" } },
       interactivity: {
-        detectsOn: "window", // ✅ ensures interaction even when canvas is behind UI
+        detectsOn: "window",
         events: {
-          onHover: {
-            enable: true,
-            mode: ["grab", "repulse", "bubble"],
-            parallax: { enable: true, force: 60, smooth: 12 },
-          },
-          onClick: {
-            enable: true,
-            mode: ["push", "repulse", "connect"],
-          },
-          resize: { enable: true },
+          onHover: { enable: true, mode: ["grab", "bubble"] },
+          onClick: { enable: true, mode: ["push"] },
         },
         modes: {
-          grab: { distance: 220, links: { opacity: 0.7 } },
-          repulse: { distance: 150, duration: 0.5, speed: 1 },
+          grab: { distance: 200, links: { opacity: 0.7 } },
           bubble: {
-            distance: 200,
-            size: 8,
-            duration: 2,
-            opacity: 0.9,
-            color: { value: isDark ? "#60a5fa" : "#2563eb" },
+            distance: 180,
+            size: 9,
+            duration: 1.3,
+            opacity: 1,
+            color: { value: isDark ? "#93c5fd" : "#1d4ed8" },
           },
-          push: { quantity: 3 },
-          connect: { distance: 120, radius: 180, links: { opacity: 0.6 } },
+          push: { quantity: 2 },
         },
       },
       particles: {
-        number: { value: 100, density: { enable: true, area: 900 } },
+        number: { value: particleCount, density: { enable: true, area: 900 } },
         color: {
           value: isDark
-            ? ["#ffffff", "#38bdf8", "#a78bfa"]
-            : ["#2563eb", "#0ea5e9", "#6366f1"],
+            ? ["#ffffff", "#93c5fd", "#c084fc"]
+            : ["#2563eb", "#3b82f6", "#60a5fa", "#1d4ed8"],
         },
         links: {
           enable: true,
-          distance: 140,
-          color: isDark ? "#818cf8" : "#1e3a8a",
-          opacity: isDark ? 0.25 : 0.55,
+          distance: 130,
+          color: isDark ? "#93c5fd" : "#1e3a8a",
+          opacity: isDark ? 0.35 : 0.45,
           width: 1.1,
         },
         move: {
           enable: true,
-          speed: 0.6,
-          random: false,
-          straight: false,
-          direction: "none",
+          speed: 0.7,
+          random: true,
           outModes: { default: "out" },
-          attract: { enable: true, rotateX: 600, rotateY: 1200 },
         },
         opacity: {
-          value: { min: 0.3, max: 0.6 },
-          animation: { enable: true, speed: 0.4, sync: false },
+          value: { min: 0.4, max: 0.9 },
+          animation: { enable: true, speed: 0.8 },
         },
         size: {
-          value: { min: 1, max: 3.5 },
-          animation: { enable: true, speed: 2, minimumValue: 0.4 },
+          value: { min: 1.4, max: 3.4 },
+          animation: { enable: true, speed: 2 },
+        },
+        twinkle: {
+          particles: {
+            enable: true,
+            frequency: 0.1,
+            opacity: 1,
+            color: { value: isDark ? "#60a5fa" : "#2563eb" },
+          },
         },
       },
     } as RecursivePartial<IOptions>;
-  }, [resolvedTheme]);
+  }, [resolvedTheme, particleCount]);
 
   if (!engineReady) return null;
   const isDark = resolvedTheme === "dark";
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden transition-colors duration-700">
-      {/* 🌌 Parallax Gradient */}
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      {/* Subtle ambient gradient */}
       <div
         ref={parallaxRef}
-        className={`absolute inset-0 blur-3xl transition-transform duration-100 ease-linear ${
+        className={`absolute inset-0 transition-transform duration-100 ease-linear ${
           isDark
-            ? "bg-[radial-gradient(ellipse_at_top_left,_#1e3a8a_0%,_transparent_60%),radial-gradient(ellipse_at_bottom_right,_#00bcd4_0%,_transparent_70%)] opacity-25"
-            : "bg-[radial-gradient(ellipse_at_top_left,_#93c5fd_0%,_transparent_60%),radial-gradient(ellipse_at_bottom_right,_#a5b4fc_0%,_transparent_70%)] opacity-55"
+            ? "bg-[radial-gradient(circle_at_center,_#0f172a_0%,_transparent_80%)]"
+            : "bg-[radial-gradient(circle_at_center,_#e0f2fe_0%,_transparent_80%)]"
         }`}
       />
 
-      {/* ✨ Interactive Particles */}
+      {/* Particle Layer */}
       <Particles id="tsparticles" options={options} />
 
-      {/* 🧊 Frosted Glass Layer */}
+      {/* Frosted Layer (lighter tint) */}
       <div
-        className={`absolute inset-0 backdrop-blur-[6px] border-t border-white/10 transition-all duration-700 ${
+        className={`absolute inset-0 backdrop-blur-[4px] transition-all duration-700 ${
           isDark
-            ? "bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.04)_0%,rgba(0,0,0,0.5)_100%)]"
-            : "bg-[linear-gradient(to_bottom_right,rgba(255,255,255,0.5)_0%,rgba(255,255,255,0.2)_100%)]"
+            ? "bg-[rgba(0,0,0,0.25)]"
+            : "bg-[rgba(255,255,255,0.4)]"
         }`}
       />
 
-      {/* 💫 Soft shimmer overlay */}
+      {/* Halo */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-30 mix-blend-overlay animate-[shimmer_6s_infinite_linear]"
-        style={{
-          background:
-            "linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
-          backgroundSize: "200% 200%",
-        }}
+        ref={haloRef}
+        className="absolute inset-0 pointer-events-none mix-blend-screen animate-pulse-halo"
       />
 
       <style jsx global>{`
-        @keyframes shimmer {
+        @keyframes pulse-halo {
           0% {
-            background-position: -200% 0;
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.05);
           }
           100% {
-            background-position: 200% 0;
+            opacity: 0.3;
+            transform: scale(1);
           }
+        }
+        .animate-pulse-halo {
+          animation: pulse-halo 5s ease-in-out infinite;
         }
       `}</style>
     </div>
