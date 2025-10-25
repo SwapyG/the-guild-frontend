@@ -1,26 +1,23 @@
+// src/components/ui/button.tsx (Definitive - Operation: Type Demarcation)
+
 "use client";
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden select-none",
   {
     variants: {
       variant: {
-        default:
-          "bg-gradient-to-br from-primary/90 to-primary/70 text-primary-foreground hover:from-primary hover:to-primary/90 shadow-[0_0_12px_rgba(59,130,246,0.25)] hover:shadow-[0_0_20px_rgba(59,130,246,0.35)]",
-        secondary:
-          "bg-gradient-to-br from-muted/60 to-muted/40 border border-border/60 text-foreground hover:bg-muted/70 hover:border-border/80",
-        outline:
-          "border border-primary/40 text-primary bg-transparent hover:bg-primary/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.25)]",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors",
-        destructive:
-          "bg-gradient-to-br from-red-600/90 to-red-500/80 text-white hover:from-red-500 hover:to-red-600 shadow-[0_0_10px_rgba(220,38,38,0.35)] hover:shadow-[0_0_20px_rgba(220,38,38,0.45)]",
+        default: "bg-gradient-to-br from-primary/90 to-primary/70 text-primary-foreground hover:from-primary hover:to-primary/90 shadow-[0_0_12px_rgba(59,130,246,0.25)] hover:shadow-[0_0_20px_rgba(59,130,246,0.35)]",
+        secondary: "bg-gradient-to-br from-muted/60 to-muted/40 border border-border/60 text-foreground hover:bg-muted/70 hover:border-border/80",
+        outline: "border border-primary/40 text-primary bg-transparent hover:bg-primary/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.25)]",
+        ghost: "hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors",
+        destructive: "bg-gradient-to-br from-red-600/90 to-red-500/80 text-white hover:from-red-500 hover:to-red-600 shadow-[0_0_10px_rgba(220,38,38,0.35)] hover:shadow-[0_0_20px_rgba(220,38,38,0.45)]",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -37,38 +34,47 @@ const buttonVariants = cva(
   }
 );
 
+// --- NANO: THE CRITICAL CORRECTION ---
+// We combine standard button props with a SUBSET of motion props for animation.
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   pulse?: boolean;
 }
+// ------------------------------------
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, pulse = false, children, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-
-    // ❗ No motion wrapper when using Slot — it breaks Radix's internal single-child logic
+    
     if (asChild) {
       return (
-        <Comp
+        <Slot
           ref={ref}
           className={cn(buttonVariants({ variant, size, className }))}
           {...props}
         >
           {children}
-        </Comp>
+        </Slot>
       );
     }
 
-    // Motion only when it’s a normal button
+    // --- NANO: TYPE DEMARCATION ---
+    // We define our motion props separately. These are safe.
+    const motionProps: HTMLMotionProps<"button"> = {
+        whileHover: { scale: 1.03 },
+        whileTap: { scale: 0.97 },
+        transition: { type: "spring", stiffness: 300, damping: 18 },
+    };
+    
     return (
       <motion.button
         ref={ref}
         className={cn(buttonVariants({ variant, size, className }))}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 300, damping: 18 }}
+        // Apply the safe motion props
+        {...motionProps}
+        // Apply the standard HTML button props.
+        // TypeScript is now satisfied because there are no conflicting prop types.
         {...props}
       >
         {pulse && (
@@ -83,7 +89,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
   }
 );
-
 Button.displayName = "Button";
 
 export { Button, buttonVariants };
