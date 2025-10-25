@@ -2,12 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, Eye, Target, Zap } from "lucide-react";
+import { Eye, Target, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { FadeIn } from "@/components/animations/FadeIn";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "next-themes";
+import { motion } from "framer-motion";
 
 export function LandingPageClient() {
   const { isAuthenticated } = useAuth();
@@ -27,7 +28,7 @@ export function LandingPageClient() {
                 className={`bg-gradient-to-br ${
                   isDark
                     ? "from-sky-300 via-blue-400 to-white"
-                    : "from-sky-700 via-blue-600 to-indigo-700"
+                    : "from-blue-700 via-sky-600 to-indigo-700"
                 } bg-clip-text text-transparent`}
               >
                 Start Leading a Guild.
@@ -44,36 +45,32 @@ export function LandingPageClient() {
             </p>
           </FadeIn>
 
-          {/* Main CTA */}
+          {/* Frosted Glass Button */}
           <FadeIn delay={0.6} direction="up">
-            <div className="mt-10 flex justify-center gap-4">
-              <Button
-                size="lg"
-                className={`text-lg px-8 py-7 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                ${
-                  isDark
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/70"
-                    : "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500"
-                }`}
-              >
-                <PlayCircle className="mr-3 h-6 w-6" />
-                Watch the 2-Minute Demo
-              </Button>
-            </div>
-          </FadeIn>
-
-          {isAuthenticated && (
-            <FadeIn delay={0.8} direction="up">
-              <div className="mt-6">
-                <Link
-                  href="/dashboard"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            <motion.div
+              className="mt-12 flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <Link href={isAuthenticated ? "/dashboard" : "/auth/register"}>
+                <Button
+                  size="lg"
+                  className={`
+                    relative text-lg px-10 py-6 font-semibold rounded-2xl backdrop-blur-md
+                    border transition-all duration-300
+                    ${
+                      isDark
+                        ? "bg-white/10 border-white/20 text-white hover:bg-white/15 hover:border-white/30"
+                        : "bg-white/50 border-white/60 text-gray-900 hover:bg-white/70 hover:border-gray-300 shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
+                    }
+                  `}
                 >
-                  Or, go to the dashboard →
-                </Link>
-              </div>
-            </FadeIn>
-          )}
+                  Watch the 2-Minute Demo
+                </Button>
+              </Link>
+            </motion.div>
+          </FadeIn>
         </div>
       </section>
 
@@ -173,7 +170,7 @@ export function LandingPageClient() {
               <FadeIn direction={s.direction === "left" ? "left" : "right"}>
                 <div>
                   <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
-                    <s.icon className="h-4 w-4" /> {s.label}
+                    {s.label}
                   </div>
                   <h3 className="text-3xl font-bold tracking-tight">{s.title}</h3>
                   <p className="mt-4 text-muted-foreground text-lg">{s.desc}</p>
@@ -198,44 +195,6 @@ export function LandingPageClient() {
               </FadeIn>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section
-        className={`w-full py-32 px-4 md:px-8 text-center backdrop-blur-md ${
-          isDark
-            ? "bg-[rgba(30,41,59,0.4)] border-t border-white/10"
-            : "bg-[rgba(240,249,255,0.5)] border-t border-blue-100"
-        }`}
-      >
-        <div className="max-w-4xl mx-auto">
-          <FadeIn>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Ready to Unleash Your Talent?
-            </h2>
-            <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-              Stop managing boxes and start leading missions.
-            </p>
-            <div className="mt-10">
-              <Link
-                href={isAuthenticated ? "/dashboard" : "/auth/register"}
-                passHref
-              >
-                <Button
-                  size="lg"
-                  className={`text-lg px-8 py-7 font-semibold rounded-xl shadow-xl transform transition-all duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2
-                    ${
-                      isDark
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/70"
-                        : "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500"
-                    }`}
-                >
-                  {isAuthenticated ? "Go to Your Dashboard" : "Get Started for Free"}
-                </Button>
-              </Link>
-            </div>
-          </FadeIn>
         </div>
       </section>
     </main>

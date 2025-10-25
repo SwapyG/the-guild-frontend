@@ -1,4 +1,4 @@
-// src/app/missions/[missionId]/page.tsx (Definitive, Corrected Version)
+// src/app/missions/[missionId]/page.tsx (Complete & Final)
 
 "use client";
 
@@ -65,10 +65,7 @@ const RoleCard = ({
 
 export default function MissionDetailPage() { 
   const params = useParams();
-  // --- NANO: CRITICAL CORRECTION ---
-  // The parameter name now correctly matches the folder name `[missionId]`.
-  const missionId = params.missionId as string; 
-  // -------------------------------
+  const missionId = params.missionId as string;
 
   const { user } = useAuth();
   const [mission, setMission] = useState<Mission | null>(null);
@@ -78,29 +75,23 @@ export default function MissionDetailPage() {
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
-  const [pitchListKey, setPitchListKey] = useState(Date.now());
+
+  const fetchMission = useCallback(async () => {
+    if (!missionId) return;
+    setLoading(true);
+    try {
+      const data = await getMissionById(missionId);
+      setMission(data);
+    } catch (err) {
+      setError('Failed to fetch mission details.');
+    } finally {
+      setLoading(false);
+    }
+  }, [missionId]);
 
   useEffect(() => {
-    if (!missionId) {
-      return; 
-    }
-
-    const fetchMission = async () => {
-      setLoading(true);
-      try {
-        const data = await getMissionById(missionId);
-        setMission(data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching mission:", err);
-        setError('Failed to fetch mission details.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMission();
-  }, [missionId]);
+  }, [fetchMission]);
 
   const handleOpenDraftModal = (roleId: string) => {
     setSelectedRoleId(roleId);
@@ -108,20 +99,14 @@ export default function MissionDetailPage() {
   };
   
   const handleDraftSuccess = () => {
-    if (missionId) {
-        const refetch = async () => {
-            const data = await getMissionById(missionId);
-            setMission(data);
-        };
-        refetch();
-        toast.success("Role assigned successfully.");
-    }
+    toast.success("Member drafted successfully!");
+    fetchMission(); // Refetch all mission data to update the UI
     setIsDraftModalOpen(false);
   };
-
+  
   const handlePitchSuccess = () => {
-    toast.success("Pitch submitted! The mission lead has been notified.");
-    setPitchListKey(Date.now());
+    toast.success("Pitch submitted!");
+    fetchMission(); // Refetch all mission data to update the pitches list
   };
 
   const isMissionLead = user?.id === mission?.lead_user_id;
@@ -133,45 +118,48 @@ export default function MissionDetailPage() {
   return (
     <>
       <main className="container mx-auto max-w-4xl py-12 px-4">
-          <div className="mb-6">
-            <Button variant="ghost" asChild>
-                <Link href="/mission-command" className="text-sm text-primary hover:underline">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Mission Command
-                </Link>
-            </Button>
-          </div>
-          <header className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight">{mission.title}</h1>
-              <div className="flex items-center gap-2 mt-2 text-muted-foreground">
-                <span>Led by:</span>
-                <div className="flex items-center gap-2 font-semibold">
-                  <Avatar className="h-6 w-6">
-                      <AvatarImage src={mission.lead.photo_url} alt={mission.lead.name} />
-                      <AvatarFallback>{mission.lead.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span>{mission.lead.name}</span>
-                </div>
+        <div className="mb-6">
+          <Button variant="ghost" asChild>
+              <Link href="/mission-command">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Mission Command
+              </Link>
+          </Button>
+        </div>
+        <header className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">{mission.title}</h1>
+            <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+              <span>Led by:</span>
+              <div className="flex items-center gap-2 font-semibold">
+                <Avatar className="h-6 w-6">
+                    <AvatarImage src={mission.lead.photo_url} alt={mission.lead.name} />
+                    <AvatarFallback>{mission.lead.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span>{mission.lead.name}</span>
               </div>
             </div>
-            {!isMissionLead && <Button onClick={() => setIsPitchModalOpen(true)}>Pitch for this Mission</Button>}
-          </header>
-          <p className="mb-8 text-lg text-muted-foreground">{mission.description}</p>
-          <Separator className="my-8" />
-          <section>
-            <h2 className="text-2xl font-semibold mb-6">Mission Roles</h2>
-            <div className="space-y-4">
-              {mission.roles.map((role) => (
-                <RoleCard key={role.id} role={role} onDraftClick={handleOpenDraftModal} canDraft={isMissionLead} />
-              ))}
-            </div>
-          </section>
-          <Separator className="my-8" />
-          <section>
-            <h2 className="text-2xl font-semibold mb-6">Aspiration Ledger (Pitches)</h2>
-            <PitchList key={pitchListKey} missionId={mission.id} />
-          </section>
+          </div>
+          {!isMissionLead && <Button onClick={() => setIsPitchModalOpen(true)}>Pitch for this Mission</Button>}
+        </header>
+        <p className="mb-8 text-lg text-muted-foreground">{mission.description}</p>
+        <Separator className="my-8" />
+        <section>
+          <h2 className="text-2xl font-semibold mb-6">Mission Roles</h2>
+          <div className="space-y-4">
+            {mission.roles.map((role) => (
+              <RoleCard key={role.id} role={role} onDraftClick={handleOpenDraftModal} canDraft={isMissionLead} />
+            ))}
+          </div>
+        </section>
+        <Separator className="my-8" />
+        <section>
+          <h2 className="text-2xl font-semibold mb-6">Aspiration Ledger (Pitches)</h2>
+          <PitchList 
+            missionId={mission.id} 
+            isMissionLead={isMissionLead} 
+          />
+        </section>
       </main>
 
        <DraftMemberModal 

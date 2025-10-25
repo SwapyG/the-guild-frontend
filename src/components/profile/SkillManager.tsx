@@ -1,5 +1,3 @@
-// src/components/profile/SkillManager.tsx (Final - Polished and Aligned)
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -33,6 +31,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { motion } from "framer-motion";
 
 interface SkillManagerProps {
   initialSkills: UserSkill[];
@@ -47,7 +46,6 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // Fetch all available skills once
   useEffect(() => {
     getSkills()
       .then(setAllSkills)
@@ -118,9 +116,14 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Current Skills */}
-      <div className="space-y-4">
+    <div className="space-y-10">
+      {/* === Current Skills Section === */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="space-y-4"
+      >
         <h3 className="text-lg font-semibold">Your Current Skills</h3>
         {userSkills.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -135,17 +138,29 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            You haven't added any skills yet.
+          <p className="text-sm text-muted-foreground italic">
+            You haven’t added any skills yet. Start by adding one below.
           </p>
         )}
-      </div>
+      </motion.div>
 
-      {/* Add New Skill */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Add New Skill</h3>
-        <div className="flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-card shadow-sm">
-          {/* Skill Selector */}
+      {/* === Add New Skill Section === */}
+      <motion.div
+        initial={{ opacity: 0, y: 25 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="border border-border/60 rounded-xl bg-card/50 backdrop-blur-sm p-6 shadow-md space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 className="text-xl font-semibold">Add New Skill</h3>
+          <p className="text-sm text-muted-foreground">
+            Choose a skill and assign proficiency.
+          </p>
+        </div>
+
+        {/* Input Row */}
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          {/* Skill Dropdown */}
           <div className="w-full flex-1">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
@@ -157,11 +172,10 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
                 >
                   {selectedSkillId
                     ? allSkills.find((skill) => skill.id === selectedSkillId)?.name
-                    : "Select a skill to add..."}
+                    : "Select a skill..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-
               <PopoverContent
                 align="start"
                 sideOffset={6}
@@ -180,14 +194,10 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
                           key={skill.id}
                           value={skill.name}
                           onSelect={() => {
-                            setSelectedSkillId(
-                              skill.id === selectedSkillId ? "" : skill.id
-                            );
+                            setSelectedSkillId(skill.id);
                             setOpen(false);
                           }}
-                          className={cn(
-                            "flex items-center transition-colors cursor-pointer"
-                          )}
+                          className="flex items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                         >
                           <Check
                             className={cn(
@@ -207,15 +217,15 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
             </Popover>
           </div>
 
-          {/* Proficiency Selector */}
-          <div className="w-full md:w-auto">
+          {/* Proficiency Select */}
+          <div className="w-full md:w-[180px]">
             <Select
               onValueChange={(value) =>
                 setSelectedProficiency(value as SkillProficiency)
               }
               defaultValue={selectedProficiency}
             >
-              <SelectTrigger className="w-full md:w-[150px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Proficiency" />
               </SelectTrigger>
               <SelectContent side="bottom">
@@ -228,18 +238,16 @@ export const SkillManager = ({ initialSkills }: SkillManagerProps) => {
           </div>
 
           {/* Add Button */}
-          <div className="w-full md:w-auto">
-            <Button
-              className="w-full"
-              onClick={handleAddSkill}
-              disabled={isSubmitting || !selectedSkillId}
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Skill
-            </Button>
-          </div>
+          <Button
+            onClick={handleAddSkill}
+            disabled={isSubmitting || !selectedSkillId}
+            className="w-full md:w-auto rounded-full px-5 shadow-md hover:shadow-[0_0_20px_rgba(59,130,246,0.25)] transition-all"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Skill
+          </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

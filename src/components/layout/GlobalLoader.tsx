@@ -1,129 +1,144 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import GuildLogo from "./GuildLogo";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
-const loadingMessages = [
-  "Forging neural pathways...",
-  "Summoning elite operatives...",
-  "Synchronizing mission intel...",
-  "Calibrating the Guild systems...",
-  "Polishing the steel...",
-  "Architecting the future of work...",
-];
-
-export const GlobalLoader = () => {
-  const [index, setIndex] = useState(0);
+export function GlobalLoader() {
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % loadingMessages.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
+  const isDark = resolvedTheme === "dark";
+  const primaryGlow = isDark ? "#60a5fa" : "#2563eb";
+  const secondaryGlow = isDark ? "#818cf8" : "#3b82f6";
 
   return (
-    <motion.div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden transition-colors duration-700
-        ${isDark ? "bg-[#020617]" : "bg-[#f1f5f9]"}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      {/* Glowing background orbs */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className={`absolute w-[600px] h-[600px] rounded-full blur-[120px] opacity-30 animate-pulse
-          ${isDark ? "bg-blue-500/40" : "bg-blue-300/40"}`}
-          animate={{
-            x: [0, 50, -50, 0],
-            y: [0, -40, 40, 0],
-            scale: [1, 1.2, 0.9, 1],
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 12,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className={`absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full blur-[100px] opacity-25
-          ${isDark ? "bg-purple-600/30" : "bg-indigo-300/30"}`}
-          animate={{
-            x: [0, -30, 30, 0],
-            y: [0, 40, -40, 0],
-            scale: [1, 1.1, 0.95, 1],
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 10,
-            ease: "easeInOut",
-          }}
-        />
-      </div>
-
-      {/* Rotating halo */}
+    <AnimatePresence>
       <motion.div
-        className={`absolute w-[220px] h-[220px] rounded-full blur-2xl ${
-          isDark ? "bg-gradient-to-r from-blue-500/20 to-indigo-600/20" : "bg-gradient-to-r from-blue-400/25 to-indigo-400/25"
-        }`}
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-      />
-
-      {/* Main logo pulse */}
-      <motion.div
-        animate={{
-          scale: [1, 1.08, 1],
-          opacity: [0.8, 1, 0.8],
-          rotate: [0, 2, -2, 0],
-        }}
-        transition={{
-          duration: 2.5,
-          ease: "easeInOut",
-          repeat: Infinity,
-        }}
+        key="guild-nexus-loader"
+        className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-background/70 backdrop-blur-2xl"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.6, ease: "easeInOut" }}
       >
-        <GuildLogo
-          className={`h-20 w-20 ${
-            isDark ? "text-slate-100" : "text-slate-800"
-          } drop-shadow-[0_0_25px_rgba(56,189,248,0.3)]`}
+        {/* --- Pulsing Energy Fields --- */}
+        <motion.div
+          className="absolute w-[600px] h-[600px] rounded-full blur-[140px] opacity-25"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${primaryGlow}, transparent 70%)`,
+          }}
+          animate={{ scale: [1, 1.1, 1], rotate: [0, 45, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
-      </motion.div>
+        <motion.div
+          className="absolute w-[900px] h-[900px] rounded-full blur-[200px] opacity-15"
+          style={{
+            background: `radial-gradient(circle at 80% 20%, ${secondaryGlow}, transparent 70%)`,
+          }}
+          animate={{ scale: [1.1, 1, 1.1], rotate: [0, -45, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
 
-      {/* Message transition */}
-      <div className="mt-8 h-6 text-center text-base font-medium">
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={index}
-            initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
-            transition={{ duration: 0.6 }}
-            className={`tracking-wide ${
-              isDark
-                ? "bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 text-transparent bg-clip-text"
-                : "bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 text-transparent bg-clip-text"
-            }`}
+        {/* --- Central Command Node --- */}
+        <motion.div
+          className="relative z-10 flex flex-col items-center text-center"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        >
+          {/* Rotating Nexus Ring */}
+          <motion.div
+            className="relative h-32 w-32 mb-6 flex items-center justify-center"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
           >
-            {loadingMessages[index]}
-          </motion.p>
-        </AnimatePresence>
-      </div>
+            <motion.div
+              className="absolute inset-0 rounded-full border-[3px] border-t-transparent border-primary/60 border-r-primary/20"
+              style={{ boxShadow: `0 0 45px ${primaryGlow}` }}
+            />
+            {/* Inner rotating energy ring */}
+            <motion.div
+              className="absolute inset-4 rounded-full border-[1px] border-dashed border-primary/30"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+            />
 
-      {/* Subtle bottom glow */}
-      <motion.div
-        className={`absolute bottom-0 w-[80%] h-[2px] rounded-full blur-sm mx-auto ${
-          isDark ? "bg-gradient-to-r from-blue-600 via-cyan-400 to-indigo-600" : "bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-400"
-        }`}
-        animate={{ opacity: [0.3, 0.8, 0.3] }}
-        transition={{ duration: 3, repeat: Infinity }}
-      />
-    </motion.div>
+            {/* “The Guild” text core */}
+            <motion.h1
+              className="text-2xl font-bold tracking-widest uppercase text-primary drop-shadow-[0_0_12px_rgba(59,130,246,0.6)] select-none"
+              animate={{
+                opacity: [0.8, 1, 0.8],
+                scale: [1, 1.05, 1],
+                textShadow: [
+                  `0 0 10px ${primaryGlow}`,
+                  `0 0 25px ${secondaryGlow}`,
+                  `0 0 10px ${primaryGlow}`,
+                ],
+              }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              The Guild
+            </motion.h1>
+          </motion.div>
+
+          {/* Status Line */}
+          <motion.p
+            className="text-sm md:text-base font-medium tracking-[0.2em] text-foreground/80 uppercase"
+            animate={{
+              opacity: [0.5, 1, 0.5],
+              letterSpacing: ["0.12em", "0.22em", "0.12em"],
+            }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            Activating Mission Channels...
+          </motion.p>
+
+          {/* Energy Progress Line */}
+          <motion.div
+            className="mt-6 w-56 h-[3px] rounded-full overflow-hidden bg-muted/30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
+            <motion.div
+              className="h-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+              initial={{ width: "0%" }}
+              animate={{ width: ["0%", "100%", "0%"] }}
+              transition={{
+                duration: 3.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+        </motion.div>
+
+        {/* --- Ambient Data Particles --- */}
+        {Array.from({ length: 24 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute w-[2px] h-[2px] rounded-full bg-primary/40"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: ["0%", "-120%"],
+              opacity: [0, 1, 0],
+              scale: [0.6, 1, 0.6],
+            }}
+            transition={{
+              duration: 5 + Math.random() * 4,
+              delay: Math.random() * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </motion.div>
+    </AnimatePresence>
   );
-};
+}

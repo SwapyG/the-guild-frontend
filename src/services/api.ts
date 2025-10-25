@@ -1,7 +1,7 @@
-// src/services/api.ts (Definitive Final Version with draftUserToRole Restored)
+// src/services/api.ts (Complete & Final)
 
 import axios from 'axios';
-import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill, MissionStatus, Notification, MissionInvite } from '@/types';
+import { Mission, User, MissionRole, MissionPitch, SkillProficiency, Skill, MissionStatus, Notification, MissionInvite, PitchStatus } from '@/types';
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -10,7 +10,6 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// NANO: Cache-busting configuration
 const cacheBustingConfig = {
     headers: {
         'Cache-Control': 'no-cache',
@@ -104,6 +103,10 @@ export const getPitchesForMission = async (missionId: string): Promise<MissionPi
     const response = await apiClient.get(`/missions/${missionId}/pitches`, cacheBustingConfig);
     return response.data;
 };
+export const updatePitchStatus = async (pitchId: string, status: PitchStatus): Promise<MissionPitch> => {
+    const response = await apiClient.patch(`/pitches/${pitchId}/status`, { status });
+    return response.data;
+};
 export interface MissionInviteCreatePayload {
     mission_role_id: string;
     invited_user_id: string;
@@ -120,13 +123,10 @@ export const respondToInvite = async (inviteId: string, status: 'Accepted' | 'De
     const response = await apiClient.patch(`/invites/${inviteId}`, { status });
     return response.data;
 };
-
-// --- NANO: THE MISSING FUNCTION IS RESTORED ---
 export const draftUserToRole = async (roleId: string, userId: string): Promise<MissionRole> => {
     const response = await apiClient.post(`/mission-roles/${roleId}/draft`, { assignee_user_id: userId });
     return response.data;
 };
-// ---------------------------------------------
 
 // --- Notifications ---
 export const getMyNotifications = async (): Promise<Notification[]> => {

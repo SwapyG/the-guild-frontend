@@ -1,33 +1,33 @@
-// src/components/ui/button.tsx (Corrected with React.forwardRef)
+"use client";
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden select-none",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+        default:
+          "bg-gradient-to-br from-primary/90 to-primary/70 text-primary-foreground hover:from-primary hover:to-primary/90 shadow-[0_0_12px_rgba(59,130,246,0.25)] hover:shadow-[0_0_20px_rgba(59,130,246,0.35)]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-gradient-to-br from-muted/60 to-muted/40 border border-border/60 text-foreground hover:bg-muted/70 hover:border-border/80",
+        outline:
+          "border border-primary/40 text-primary bg-transparent hover:bg-primary/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.25)]",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors",
+        destructive:
+          "bg-gradient-to-br from-red-600/90 to-red-500/80 text-white hover:from-red-500 hover:to-red-600 shadow-[0_0_10px_rgba(220,38,38,0.35)] hover:shadow-[0_0_20px_rgba(220,38,38,0.45)]",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        default: "h-10 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-11 rounded-md px-8 text-base",
+        icon: "h-10 w-10",
       },
     },
     defaultVariants: {
@@ -41,25 +41,49 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  pulse?: boolean;
 }
 
-// --- NANO: CRITICAL CORRECTION ---
-// The component is now wrapped in React.forwardRef.
-// This allows it to receive a 'ref' from a parent component and forward it
-// to the underlying DOM element ('button' or 'Slot').
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, pulse = false, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+
+    // ❗ No motion wrapper when using Slot — it breaks Radix's internal single-child logic
+    if (asChild) {
+      return (
+        <Comp
+          ref={ref}
+          className={cn(buttonVariants({ variant, size, className }))}
+          {...props}
+        >
+          {children}
+        </Comp>
+      );
+    }
+
+    // Motion only when it’s a normal button
     return (
-      <Comp
+      <motion.button
+        ref={ref}
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref} // The forwarded ref is now attached here.
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 300, damping: 18 }}
         {...props}
-      />
+      >
+        {pulse && (
+          <motion.span
+            className="absolute inset-0 rounded-md bg-gradient-to-br from-primary/25 to-transparent opacity-30 blur-xl"
+            animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.1, 1] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+        <span className="relative z-10">{children}</span>
+      </motion.button>
     );
   }
 );
-Button.displayName = "Button"; // Recommended for better debugging.
-// ------------------------------------
+
+Button.displayName = "Button";
 
 export { Button, buttonVariants };

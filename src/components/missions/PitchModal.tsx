@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { pitchForMission } from "@/services/api";
+import { cn } from "@/lib/utils";
+
 import {
   Dialog,
   DialogContent,
@@ -72,20 +74,56 @@ export const PitchModal = ({
     }
   };
 
+  // ✨ Styling constants
+  const maxLength = 500;
+  const remaining = maxLength - pitchText.length;
+  const glowColor = "rgba(59,130,246,0.35)";
+
+  // 🧠 Auto-resize textarea
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = "auto";
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
+    }
+  }, [pitchText]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <AnimatePresence>
         {isOpen && (
-          <DialogContent className="sm:max-w-[500px] rounded-2xl backdrop-blur-md bg-background/80 border border-border/40 shadow-2xl">
+          <DialogContent
+            className="sm:max-w-[500px] rounded-2xl border border-border/40 bg-background/80 backdrop-blur-xl shadow-[0_0_40px_rgba(59,130,246,0.15)] overflow-hidden"
+          >
             <motion.div
               key="pitch-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="relative"
             >
-              <DialogHeader>
-                <DialogTitle className="text-lg font-semibold">
+              {/* ✨ Animated blue pulse ring */}
+              <motion.div
+                className="absolute inset-0 rounded-2xl pointer-events-none"
+                initial={{ opacity: 0, boxShadow: `0 0 0px ${glowColor}` }}
+                animate={{
+                  opacity: 1,
+                  boxShadow: [
+                    `0 0 0px ${glowColor}`,
+                    `0 0 20px ${glowColor}`,
+                    `0 0 0px ${glowColor}`,
+                  ],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+
+              {/* HEADER */}
+              <DialogHeader className="relative z-10">
+                <DialogTitle className="text-xl font-semibold tracking-tight">
                   Pitch for this Mission
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground">
@@ -94,36 +132,80 @@ export const PitchModal = ({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="grid gap-4 py-4">
+              {/* BODY */}
+              <div className="relative z-10 grid gap-4 py-4">
                 <div className="grid w-full gap-1.5">
-                  <Label htmlFor="pitch">Your Pitch</Label>
-                  <Textarea
-                    ref={textAreaRef}
-                    id="pitch"
-                    placeholder="I have extensive experience in..."
-                    value={pitchText}
-                    onChange={(e) => setPitchText(e.target.value)}
-                    rows={6}
-                    className="resize-none focus:ring-2 focus:ring-primary/50 border-border/40"
-                  />
+                  <Label
+                    htmlFor="pitch"
+                    className="text-sm font-medium text-foreground/80"
+                  >
+                    Your Pitch
+                  </Label>
+
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      boxShadow:
+                        pitchText.length > 0
+                          ? `0 0 15px ${glowColor}`
+                          : "0 0 0 transparent",
+                    }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="rounded-lg border border-border/40 transition-all"
+                  >
+                    <Textarea
+                      ref={textAreaRef}
+                      id="pitch"
+                      placeholder="I have extensive experience in..."
+                      value={pitchText}
+                      onChange={(e) => setPitchText(e.target.value)}
+                      rows={4}
+                      maxLength={maxLength}
+                      className="resize-none bg-background/40 focus:ring-2 focus:ring-primary/40 text-sm placeholder:text-muted-foreground/60 border-none"
+                    />
+                  </motion.div>
+
+                  {/* CHARACTER COUNTER */}
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: pitchText.length > 0 ? 1 : 0,
+                      y: pitchText.length > 0 ? 0 : 4,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className={cn(
+                      "text-xs text-right mt-1",
+                      remaining < 50
+                        ? "text-red-400"
+                        : "text-muted-foreground/70"
+                    )}
+                  >
+                    {remaining} characters left
+                  </motion.p>
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !pitchText.trim()}
-                  className="min-w-[120px]"
+              {/* FOOTER */}
+              <DialogFooter className="relative z-10">
+                <motion.div
+                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.02 }}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit Pitch"
-                  )}
-                </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !pitchText.trim()}
+                    className="min-w-[130px] rounded-full shadow-md bg-primary/90 hover:bg-primary text-white hover:shadow-[0_0_25px_rgba(59,130,246,0.25)] transition-all"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit Pitch"
+                    )}
+                  </Button>
+                </motion.div>
               </DialogFooter>
             </motion.div>
           </DialogContent>
